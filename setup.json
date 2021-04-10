@@ -19,7 +19,7 @@
     ],
     "extras_require": {
         "develop": [
-            "phonopy"
+            "pytest"
         ]
     }
 }
