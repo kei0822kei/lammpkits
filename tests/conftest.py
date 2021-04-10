@@ -27,3 +27,18 @@ def mg_cell() -> tuple:
     cell = get_cell_from_pymatgen_structure(pmgstructure)
 
     return cell
+
+
+@pytest.fixture(autouse=True, scope='session')
+def ar_cell() -> tuple:
+    """
+    Ar FCC cell.
+
+    Returns:
+        tuple: Ar FCC cell.
+    """
+    pmgstructure = \
+            Poscar.from_file(os.path.join(DATA_DIR, 'Ar.poscar')).structure
+    cell = get_cell_from_pymatgen_structure(pmgstructure)
+
+    return cell

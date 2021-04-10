@@ -42,6 +42,20 @@ class LammpsRelax():
         """
         return self._energy
 
+    @property
+    def lammps_input(self):
+        """
+        Lammps input.
+        """
+        return self._lammps_input
+
+    def print_lammps_input(self):
+        """
+        Print lammps input.
+        """
+        for line in self._lammps_input:
+            print(line)
+
     def add_structure(self, cell:tuple):
         """
         Add structure to lammps input.
@@ -95,7 +109,7 @@ class LammpsRelax():
                 ]
         self._lammps_input.extend(strings)
 
-    def run(self):
+    def run_lammps(self):
         """
         Run lammps.
 

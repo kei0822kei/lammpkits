@@ -5,72 +5,71 @@ boundary p p p
 atom_style atomic
 atom_modify map array
 box tilt large
-read_data /tmp/tmpqh4ftjea
+read_data /tmp/tmpwn4ko6m1
 Reading data file ...
-  triclinic box = (0.0000000 0.0000000 0.0000000) to (3.1893190 2.7620320 5.1879250) with tilt (-1.5946600 0.0000000 0.0000000)
-WARNING: Triclinic box skew is large (../domain.cpp:218)
+  orthogonal box = (0.0000000 0.0000000 0.0000000) to (5.2500000 5.2500000 5.2500000)
   1 by 1 by 1 MPI processor grid
   reading atoms ...
-  2 atoms
+  4 atoms
   read_data CPU = 0.002 seconds
-pair_style mlip_gtinv
-pair_coeff * * gtiv-483.lammps Mg
-neighbor        0.3 bin
-fix             1 all box/relax aniso 0.0 couple xy vmax 0.01
+pair_style lj/cut 10
+pair_coeff * * 0.01042 3.4 10
+neighbor 0.3 bin
+fix 1 all box/relax aniso 0.0 couple xy vmax 0.01
 variable energy equal pe
 minimize 0.0 1.0e-8 1000 100000
 WARNING: Using 'neigh_modify every 1 delay 0 check yes' setting during minimization (../min.cpp:188)
 Neighbor list info ...
   update every 1 steps, delay 0 steps, check yes
   max neighbors/atom: 2000, page size: 100000
-  master list distance cutoff = 6.3
-  ghost atom cutoff = 6.3
-  binsize = 3.15, bins = 2 1 2
+  master list distance cutoff = 10.3
+  ghost atom cutoff = 10.3
+  binsize = 5.15, bins = 2 2 2
   1 neighbor lists, perpetual/occasional/extra = 1 0 0
-  (1) pair mlip_gtinv, perpetual
+  (1) pair lj/cut, perpetual
       attributes: half, newton on
-      pair build: half/bin/newton/tri
-      stencil: half/bin/3d/newton/tri
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d/newton
       bin: standard
-Per MPI rank memory allocation (min/avg/max) = 4.104 | 4.104 | 4.104 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 4.088 | 4.088 | 4.088 Mbytes
 Step Temp E_pair E_mol TotEng Press Volume 
-       0            0   -3.0093448            0   -3.0093448    647.81929    45.700437 
-      12            0   -3.0095445            0   -3.0095445 -9.2046581e-10     45.78081 
-Loop time of 0.0134223 on 1 procs for 12 steps with 2 atoms
+       0            0  -0.34612658            0  -0.34612658    136.39486    144.70312 
+       3            0   -0.3461535            0   -0.3461535 -1.3513079e-05     145.3398 
+Loop time of 0.000379331 on 1 procs for 3 steps with 4 atoms
 
-728.5% CPU use with 1 MPI tasks x no OpenMP threads
+738.9% CPU use with 1 MPI tasks x no OpenMP threads
 
 Minimization stats:
   Stopping criterion = force tolerance
   Energy initial, next-to-last, final = 
-       -3.009344783477  -3.00954446610274  -3.00954446610274
-  Force two-norm initial, final = 0.079501069 9.9671917e-14
-  Force max component initial, final = 0.048188278 6.2054528e-14
-  Final line search alpha, max atom move = 1.0000000 6.2054528e-14
-  Iterations, force evaluations = 12 24
+     -0.34612658217133 -0.346153504675905 -0.346153504699949
+  Force two-norm initial, final = 0.021336648 2.1200866e-09
+  Force max component initial, final = 0.012318720 1.2240326e-09
+  Final line search alpha, max atom move = 1.0000000 1.2240326e-09
+  Iterations, force evaluations = 3 6
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 0.01329    | 0.01329    | 0.01329    |   0.0 | 99.02
+Pair    | 9.2277e-05 | 9.2277e-05 | 9.2277e-05 |   0.0 | 24.33
 Neigh   | 0          | 0          | 0          |   0.0 |  0.00
-Comm    | 2.5449e-05 | 2.5449e-05 | 2.5449e-05 |   0.0 |  0.19
+Comm    | 1.9068e-05 | 1.9068e-05 | 1.9068e-05 |   0.0 |  5.03
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 0.0001066  |            |       |  0.79
+Other   |            | 0.000268   |            |       | 70.65
 
-Nlocal:        2.00000 ave           2 max           2 min
+Nlocal:        4.00000 ave           4 max           4 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Nghost:        148.000 ave         148 max         148 min
+Nghost:        360.000 ave         360 max         360 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Neighs:        50.0000 ave          50 max          50 min
+Neighs:        268.000 ave         268 max         268 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 50
-Ave neighs/atom = 25.000000
+Total # of neighbors = 268
+Ave neighs/atom = 67.000000
 Neighbor list builds = 0
 Dangerous builds = 0
 info variables
 print "${energy}"
--3.00954446610274
+-0.346153504699949
 Total wall time: 0:00:00
