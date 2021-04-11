@@ -55,6 +55,9 @@ class LammpsRelax():
     def get_initial_cell(self):
         """
         Get initial cell.
+
+        Returns:
+            tuple: Initial cell.
         """
         return self._initial_cell
 
@@ -69,8 +72,7 @@ class LammpsRelax():
         """
         Print lammps input.
         """
-        for line in self._lammps_input:
-            print(line)
+        print('\n'.join(self._lammps_input))
 
     def add_structure(self, cell:tuple):
         """
@@ -79,16 +81,6 @@ class LammpsRelax():
         Args:
             cell: (lattice, frac_coords, symbol)
         """
-        def _dump_cell(_cell):
-            """
-            Return template file path.
-            """
-            _, tmp_fname = tempfile.mkstemp()
-            write_lammps_structure(
-                    cell=_cell,
-                    filename=tmp_fname)
-            return tmp_fname
-
         self._check_run_is_not_finished()
         structure_file = _dump_cell(cell)
         strings = [
@@ -125,7 +117,13 @@ class LammpsRelax():
             pot_file: Potential file path from potentials directory.
 
         Notes:
-            Potential file is read from /path/to/potentials/dir/pot_file.
+            Potential file is read from
+            /path/to/lammpkits/potentials/dir/pot_file.
+            You can create potentials directory by
+            ```
+            mkdir /path/to/lammpkits/potentials
+            ```
+            and add potentials.
         """
         self._check_run_is_not_finished()
         pot_dir = os.path.join(os.path.dirname(os.path.dirname(
@@ -154,13 +152,26 @@ class LammpsRelax():
                 ]
         self._lammps_input.extend(strings)
 
-    def run_lammps(self):
+    def run_lammps(self, use_mpi:bool=False):
         """
         Run lammps.
+
+        Args:
+            use_mpi: Whether use mpi or not.
+
+        Notes:
+            When use_mpi=True, the script must be run with mpirun like
+            ```
+            mpirun -np 4 python script.py
+            ```
         """
         self._check_run_is_not_finished()
-        for line in self._lammps_input:
-            self._lammps.command(line)
+        fname = _dump_strings(self._lammps_input)
+        if use_mpi:
+            from mpi4py import MPI
+        self._lammps.file(fname)
+        if use_mpi:
+            MPI.Finalize()
         self._is_run_finished = True
 
     def get_final_cell(self):
@@ -179,6 +190,9 @@ class LammpsRelax():
     def get_energy(self):
         """
         Get energy after relax.
+
+        Args:
+            float: Final energy.
         """
         self._check_run_is_finished()
         return self._lammps.variables['energy'].value
@@ -186,9 +200,56 @@ class LammpsRelax():
     def get_forces(self):
         """
         Get forces acting on atoms after relax.
+
+        Args:
+            np.array: Forces acting on atoms.
         """
         atoms = self._lammps.atoms
         forces = []
         for i in range(len(atoms)):  # 'for atom in atoms' does not work
             forces.append(atoms[i].force)
         return np.array(forces)
+
+    def get_lammps_input_for_phonolammps(self):
+        """
+        Get lammps input for phonolammps.
+
+        Args:
+            list: List of lammps commands for phonoLAMMPS.
+        """
+        self._check_run_is_finished()
+        structure_file = _dump_cell(self.get_final_cell())
+        strings = [
+                'units metal',
+                'boundary p p p',
+                'atom_style atomic',
+                'box tilt large',
+                'read_data %s' % structure_file,
+                ]
+        pot_strings = [ s for s in self._lammps_input
+                            if 'pair_style' in s or 'pair_coeff' in s ]
+        strings.extend(pot_strings)
+        strings.append('neighbor 0.3 bin')
+
+        return strings
+
+
+def _dump_cell(_cell):
+    """
+    Return template file path.
+    """
+    _, tmp_fname = tempfile.mkstemp()
+    write_lammps_structure(
+            cell=_cell,
+            filename=tmp_fname)
+    return tmp_fname
+
+
+def _dump_strings(strings):
+    """
+    Return template file path.
+    """
+    _, tmp_fname = tempfile.mkstemp()
+    with open(tmp_fname, 'w') as f:
+        f.write('\n'.join(strings))
+    return tmp_fname

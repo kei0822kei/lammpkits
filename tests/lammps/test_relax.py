@@ -26,22 +26,21 @@ def test_lammpsrelax(ar_cell, mg_cell):
     lmp_rlx.run_lammps()
     energy = lmp_rlx.get_energy()
     np.testing.assert_allclose(energy, -0.346153, atol=1e-5)
-    print(lmp_rlx.get_final_cell())
-    from lammpkits.file_io import write_poscar
 
     # # Mg
-    mg_pair_style = 'pair_style mlip_pair'
-    pot_file = "Mg/mlp/pot/pair-8/mlp.lammps"
+    # from lammpkits.file_io import write_poscar
+    # mg_pair_style = 'pair_style mlip_pair'
+    # pot_file = "Mg/mlp/pot/pair-8/mlp.lammps"
 
-    lmp_rlx = LammpsRelax()
-    lmp_rlx.add_structure(cell=mg_cell)
-    lmp_rlx.add_potential_from_database(
-            pair_style=mg_pair_style,
-            pot_file=pot_file,
-            )
-    lmp_rlx.add_relax_settings()
-    lmp_rlx.run_lammps()
-    energy = lmp_rlx.get_energy()
-    np.testing.assert_allclose(energy, -2.985058, atol=1e-5)
-    write_poscar(lmp_rlx.get_initial_cell(), "/home/mizo/initial.poscar")
-    write_poscar(lmp_rlx.get_final_cell(), "/home/mizo/final.poscar")
+    # lmp_rlx = LammpsRelax()
+    # lmp_rlx.add_structure(cell=mg_cell)
+    # lmp_rlx.add_potential_from_database(
+    #         pair_style=mg_pair_style,
+    #         pot_file=pot_file,
+    #         )
+    # lmp_rlx.add_relax_settings()
+    # lmp_rlx.run_lammps()
+    # energy = lmp_rlx.get_energy()
+    # np.testing.assert_allclose(energy, -2.985058, atol=1e-5)
+    # write_poscar(lmp_rlx.get_initial_cell(), "/home/mizo/initial.poscar")
+    # write_poscar(lmp_rlx.get_final_cell(), "/home/mizo/final.poscar")
