@@ -1,7 +1,7 @@
 #!/usr/bin/python env
 
 """
-Toolkits for structure relaxation with lammps.
+Toolkits molecular static calculation for lammps.
 """
 
 import os
@@ -13,9 +13,9 @@ from lammpkits.file_io import write_lammps_structure
 from lammpkits.interfaces.pylammps import get_cell_from_pylammps
 
 
-class LammpsRelax():
+class LammpsStatic():
     """
-    Structure relaxation with lammps.
+    Molecular static calculation for lammps.
     """
 
     def __init__(self):
@@ -91,6 +91,7 @@ class LammpsRelax():
                 'atom_modify map array',
                 'box tilt large',
                 'read_data %s' % structure_file,
+                'neighbor 0.3 bin',
                 ]
         self._initial_cell = cell
         self._lammps_potential_symbols = tuple(set(cell[2]))
@@ -139,40 +140,61 @@ class LammpsRelax():
                 pair_coeff=pair_coeff,
                 )
 
-    def add_relax_settings(self):
+    def add_variables(self, add_energy:bool=True):
         """
-        Add relax settings.
-        """
-        self._check_run_is_not_finished()
-        strings = [
-                'neighbor 0.3 bin',
-                'fix 1 all box/relax aniso 0.0 couple xy vmax 0.01',
-                'variable energy equal pe',
-                'minimize 0.0 1.0e-8 1000 100000',
-                ]
-        self._lammps_input.extend(strings)
-
-    def run_lammps(self, use_mpi:bool=False):
-        """
-        Run lammps.
+        Add variables.
 
         Args:
-            use_mpi: Whether use mpi or not.
+            add_energy: If True, variable energy is set.
+        """
+        strings = []
+        if add_energy:
+            strings.append('variable energy equal pe')
 
-        Notes:
-            When use_mpi=True, the script must be run with mpirun like
-            ```
-            mpirun -np 4 python script.py
-            ```
+    def add_relax_settings(self, is_relax_lattice:bool=True):
+        """
+        Add relax settings.
+
+        Args:
+            is_relax_lattice: If True, lattice is relaxed.
+        """
+        self._check_run_is_not_finished()
+        strings = []
+        if is_relax_lattice:
+            strings.append('fix 1 all box/relax aniso 0.0 couple xy vmax 0.01')
+        strings.append('minimize 0.0 1.0e-8 1000 100000')
+        self._lammps_input.extend(strings)
+
+    def run_lammps(self):
+        """
+        Run lammps.
         """
         self._check_run_is_not_finished()
         fname = _dump_strings(self._lammps_input)
-        if use_mpi:
-            from mpi4py import MPI
         self._lammps.file(fname)
-        if use_mpi:
-            MPI.Finalize()
         self._is_run_finished = True
+
+    # def run_lammps(self, use_mpi:bool=False):
+    #     """
+    #     Run lammps.
+
+    #     Args:
+    #         use_mpi: Whether use mpi or not.
+
+    #     Notes:
+    #         When use_mpi=True, the script must be run with mpirun like
+    #         ```
+    #         mpirun -np 4 python script.py
+    #         ```
+    #     """
+    #     self._check_run_is_not_finished()
+    #     fname = _dump_strings(self._lammps_input)
+    #     if use_mpi:
+    #         from mpi4py import MPI
+    #     self._lammps.file(fname)
+    #     if use_mpi:
+    #         MPI.Finalize()
+    #     self._is_run_finished = True
 
     def get_final_cell(self):
         """
