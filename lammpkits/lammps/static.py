@@ -150,6 +150,7 @@ class LammpsStatic():
         strings = []
         if add_energy:
             strings.append('variable energy equal pe')
+        self._lammps_input.extend(strings)
 
     def add_relax_settings(self, is_relax_lattice:bool=True):
         """
