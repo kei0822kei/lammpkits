@@ -24,6 +24,7 @@ def test_lammpsrelax(ar_cell, mg_cell):
             )
     lmp_rlx.add_variables(add_energy=True)
     lmp_rlx.add_relax_settings(is_relax_lattice=True)
+    lmp_rlx.print_lammps_input()
     lmp_rlx.run_lammps()
     energy = lmp_rlx.get_energy()
     np.testing.assert_allclose(energy, -0.346153, atol=1e-5)

@@ -172,6 +172,7 @@ class LammpsStatic():
         """
         self._check_run_is_not_finished()
         fname = _dump_strings(self._lammps_input)
+        print("Dump lammps input to %s" % fname)
         self._lammps.file(fname)
         self._is_run_finished = True
 
