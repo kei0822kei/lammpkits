@@ -172,7 +172,6 @@ class LammpsStatic():
         strings = []
         for val, key in val_keys:
             strings.append('variable {} equal {}'.format(val, key))
-            print(strings)
         self._lammps_input.extend(strings)
 
     def add_relax_settings(self, is_relax_lattice:bool=True):
