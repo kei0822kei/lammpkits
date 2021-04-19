@@ -52,6 +52,13 @@ class LammpsStatic():
         """
         return self._lammps
 
+    @property
+    def is_run_finished(self):
+        """
+        Is lammps run finished.
+        """
+        return self._is_run_finished
+
     def get_initial_cell(self):
         """
         Get initial cell.
@@ -140,16 +147,32 @@ class LammpsStatic():
                 pair_coeff=pair_coeff,
                 )
 
-    def add_variables(self, add_energy:bool=True):
+    def add_variables(self,
+                      add_energy:bool=True,
+                      add_stress:bool=True):
         """
         Add variables.
 
         Args:
             add_energy: If True, variable energy is set.
+            add_stress: If True, variable stress is set.
         """
-        strings = []
+        val_keys = []
         if add_energy:
-            strings.append('variable energy equal pe')
+            val_keys.append(['energy', 'pe'])
+        if add_stress:
+            val_keys.append(['Pxx', 'pe'])
+            # val_keys.extend([# ['Pxx', 'pxx'],
+            #                  # ['Pyy', 'pyy'],
+            #                  # ['Pzz', 'pzz'],
+            #                  # ['Pxy', 'pxy'],
+            #                  # ['Pxz', 'pxz'],
+            #                  # ['Pyz', 'pyz'],
+            #                 ])
+        strings = []
+        for val, key in val_keys:
+            strings.append('variable {} equal {}'.format(val, key))
+            print(strings)
         self._lammps_input.extend(strings)
 
     def add_relax_settings(self, is_relax_lattice:bool=True):
@@ -163,7 +186,9 @@ class LammpsStatic():
         strings = []
         if is_relax_lattice:
             strings.append('fix 1 all box/relax aniso 0.0 couple xy vmax 0.01')
+            # strings.append('fix 1 all box/relax tri 0')
         strings.append('minimize 0.0 1.0e-8 1000 100000')
+        strings.append('min_style cg')
         self._lammps_input.extend(strings)
 
     def run_lammps(self):
@@ -175,28 +200,6 @@ class LammpsStatic():
         print("Dump lammps input to %s" % fname)
         self._lammps.file(fname)
         self._is_run_finished = True
-
-    # def run_lammps(self, use_mpi:bool=False):
-    #     """
-    #     Run lammps.
-
-    #     Args:
-    #         use_mpi: Whether use mpi or not.
-
-    #     Notes:
-    #         When use_mpi=True, the script must be run with mpirun like
-    #         ```
-    #         mpirun -np 4 python script.py
-    #         ```
-    #     """
-    #     self._check_run_is_not_finished()
-    #     fname = _dump_strings(self._lammps_input)
-    #     if use_mpi:
-    #         from mpi4py import MPI
-    #     self._lammps.file(fname)
-    #     if use_mpi:
-    #         MPI.Finalize()
-    #     self._is_run_finished = True
 
     def get_final_cell(self):
         """
@@ -220,6 +223,21 @@ class LammpsStatic():
         """
         self._check_run_is_finished()
         return self._lammps.variables['energy'].value
+
+    # def get_stress(self):
+    #     """
+    #     Get stress after relax.
+
+    #     Args:
+    #         np.array: Stress tensor.
+    #     """
+    #     v = self._lammps.variables
+    #     stress = np.array([
+    #             [ v['Pxx'].value, v['Pxy'].value, v['Pxz'].value ],
+    #             [ v['Pxy'].value, v['Pyy'].value, v['Pyz'].value ],
+    #             [ v['Pxz'].value, v['Pyz'].value, v['Pzz'].value ],
+    #         ])
+    #     return stress
 
     def get_forces(self):
         """

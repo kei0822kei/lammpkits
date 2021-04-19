@@ -9,7 +9,7 @@ from lammps import PyLammps
 from pymatgen.io.lammps.data import LammpsBox
 
 
-def get_cell_from_pylammps(pylmp:PyLammps, symbols=list, verbose:bool=True):
+def get_cell_from_pylammps(pylmp:PyLammps, symbols:list, verbose:bool=True):
     """
     Get cell from PyLammps class object.
 
