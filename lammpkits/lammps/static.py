@@ -7,7 +7,7 @@ Toolkits molecular static calculation for lammps.
 import os
 import tempfile
 import numpy as np
-from lammps import PyLammps
+from lammps import lammps
 import lammpkits
 from lammpkits.file_io import write_lammps_structure
 from lammpkits.interfaces.pylammps import get_cell_from_pylammps
@@ -19,7 +19,7 @@ class LammpsStatic():
     """
 
     def __init__(self):
-        self._lammps = PyLammps()
+        self._lammps = lammps()
         self._initial_cell = None
         self._lammps_input = []
         self._lammps_potential_symbols = None
