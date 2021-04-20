@@ -158,10 +158,14 @@ class LammpsStatic():
             thermo: Int of thermo setting.
         """
         self._check_run_is_not_finished()
+        strings= []
+
         strings.append('thermo %d' % thermo)
         strings.append('thermo_style custom step pe press '
                        + 'pxx pyy pzz pxy pxz pyz lx ly lz vol')
         strings.append('thermo_modify norm no')  # Do not normalize
+
+        self._lammps_input.extend(strings)
 
     def add_variables(self,
                       add_energy:bool=True,
@@ -178,8 +182,8 @@ class LammpsStatic():
             Currently add_stress is not working.
         """
         self._check_run_is_not_finished()
-        strings = []
 
+        strings = []
         if add_energy:
             strings.append('variable energy equal pe')
 
