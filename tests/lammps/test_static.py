@@ -22,7 +22,8 @@ def test_lammpsrelax(ar_cell, mg_cell):
             pair_style=ar_pair_style,
             pair_coeff=ar_pair_coeff,
             )
-    lmp_rlx.add_variables(add_energy=True)
+    lmp_rlx.add_thermo()
+    lmp_rlx.add_variables()
     lmp_rlx.add_relax_settings(is_relax_lattice=True)
     lmp_rlx.print_lammps_input()
     lmp_rlx.run_lammps()
