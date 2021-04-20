@@ -21,7 +21,8 @@ lmp_rlx.add_potential_from_string(
         pair_style=ar_pair_style,
         pair_coeff=ar_pair_coeff,
         )
-lmp_rlx.add_variables(add_energy=True)
+lmp_rlx.add_thermo(thermo=100)
+lmp_rlx.add_variables(add_energy=True, add_stress=True)
 lmp_rlx.add_relax_settings(is_relax_lattice=True)
 lmp_rlx.run_lammps()
 energy = lmp_rlx.get_energy()
