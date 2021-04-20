@@ -10,7 +10,7 @@ import numpy as np
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import write_lammps_structure
-from lammpkits.interfaces.pylammps import get_cell_from_pylammps
+from lammpkits.interfaces.lammps import get_cell_from_lammps
 
 
 class LammpsStatic():
@@ -98,7 +98,11 @@ class LammpsStatic():
                 'atom_modify map array',
                 'box tilt large',
                 'read_data %s' % structure_file,
-                'neighbor 0.3 bin',
+                # 'run 0',
+                'change_box all triclinic',
+                # 'neighbor 0.3 bin',
+                'neigh_modify every 1 delay 0',
+                'neigh_modify one 5000',
                 ]
         self._initial_cell = cell
         self._lammps_potential_symbols = tuple(set(cell[2]))
@@ -184,10 +188,10 @@ class LammpsStatic():
         self._check_run_is_not_finished()
         strings = []
         if is_relax_lattice:
-            strings.append('fix 1 all box/relax aniso 0.0 couple xy vmax 0.01')
-            # strings.append('fix 1 all box/relax tri 0')
-        strings.append('minimize 0.0 1.0e-8 1000 100000')
+            # strings.append('fix 1 all box/relax aniso 0.0 couple xy vmax 0.01')
+            strings.append('fix 1 all box/relax tri 0')
         strings.append('min_style cg')
+        strings.append('minimize 0.0 1.0e-8 100000000 1000000000')
         self._lammps_input.extend(strings)
 
     def run_lammps(self):
@@ -208,10 +212,12 @@ class LammpsStatic():
             tuple: Final cell.
         """
         self._check_run_is_finished()
-        return get_cell_from_pylammps(
-                pylmp=self._lammps,
-                symbols=self._initial_cell[2],
-                )
+        cell = get_cell_from_lammps(self._lammps)
+        return cell
+        # return get_cell_from_pylammps(
+        #         pylmp=self._lammps,
+        #         symbols=self._initial_cell[2],
+        #         )
 
     def get_energy(self):
         """
@@ -260,12 +266,24 @@ class LammpsStatic():
         """
         self._check_run_is_finished()
         structure_file = _dump_cell(self.get_final_cell())
+
+        from lammpkits.file_io import get_cell_from_lammps_structure, write_lammps_structure
+        cell = get_cell_from_lammps_structure("/home/mizo/jupyter/seko/structure_equiv_fix")
+        write_lammps_structure(cell, filename="/home/mizo/natai")
+
+
         strings = [
                 'units metal',
                 'boundary p p p',
                 'atom_style atomic',
                 'box tilt large',
-                'read_data %s' % structure_file,
+                # 'read_data %s' % structure_file,
+                # 'read_data %s' % "/home/mizo/structure_equiv_fix",
+                'read_data %s' % "/home/mizo/natai",
+                'change_box all triclinic',
+                # 'neighbor 0.3 bin',
+                'neigh_modify every 1 delay 0',
+                'neigh_modify one 5000',
                 ]
         pot_strings = [ s for s in self._lammps_input
                             if 'pair_style' in s or 'pair_coeff' in s ]

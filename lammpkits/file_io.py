@@ -24,6 +24,21 @@ def write_lammps_structure(cell:tuple,
     lmp_data.write_file(filename=filename)
 
 
+def get_cell_from_lammps_structure(filename:str):
+    from lammpkits.interfaces.lammps import get_cell_from_lammps
+    lammps_input = [
+            'units metal',
+            'dimension 3',
+            'boundary p p p',
+            'atom_style atomic',
+            'box tilt large',
+            'read_data %s' % filename,
+            ]
+    cell = get_cell_from_lammps(lammps_input=lammps_input)
+
+    return cell
+
+
 def write_poscar(
         cell:tuple,
         filename:str='POSCAR'):
