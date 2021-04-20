@@ -7,6 +7,7 @@ Toolkits molecular static calculation for lammps.
 import os
 import tempfile
 from pprint import pprint
+import numpy as np
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import write_lammps_structure
@@ -149,36 +150,48 @@ class LammpsStatic():
                 pair_coeff=pair_coeff,
                 )
 
-    # def add_variables(self,
-    #                   add_energy:bool=True,
-    #                   # add_stress:bool=True,
-    #                   ):
-    #     """
-    #     Add variables.
+    def add_thermo(self, thermo:int=100):
+        """
+        Add thermo settings.
 
-    #     Args:
-    #         add_energy: If True, variable energy is set.
-    #         add_stress: If True, variable stress is set.
+        Args:
+            thermo: Int of thermo setting.
+        """
+        self._check_run_is_not_finished()
+        strings.append('thermo %d' % thermo)
+        strings.append('thermo_style custom step pe press '
+                       + 'pxx pyy pzz pxy pxz pyz lx ly lz vol')
+        strings.append('thermo_modify norm no')  # Do not normalize
 
-    #     Todo:
-    #         Currently add_stress is not working.
-    #     """
-    #     val_keys = []
-    #     if add_energy:
-    #         val_keys.append(['energy', 'pe'])
-    #     # if add_stress:
-    #     #     val_keys.append(['Pxx', 'pe'])
-    #         # val_keys.extend([# ['Pxx', 'pxx'],
-    #         #                  # ['Pyy', 'pyy'],
-    #         #                  # ['Pzz', 'pzz'],
-    #         #                  # ['Pxy', 'pxy'],
-    #         #                  # ['Pxz', 'pxz'],
-    #         #                  # ['Pyz', 'pyz'],
-    #         #                 ])
-    #     strings = []
-    #     for val, key in val_keys:
-    #         strings.append('variable {} equal {}'.format(val, key))
-    #     self._lammps_input.extend(strings)
+    def add_variables(self,
+                      add_energy:bool=True,
+                      add_stress:bool=True,
+                      ):
+        """
+        Add variables.
+
+        Args:
+            add_energy: If True, variable energy is set.
+            add_stress: If True, variable stress is set.
+
+        Todo:
+            Currently add_stress is not working.
+        """
+        self._check_run_is_not_finished()
+        strings = []
+
+        if add_energy:
+            strings.append('variable energy equal pe')
+
+        if add_stress:
+            strings.append('variable pxx0 equal pxx')
+            strings.append('variable pyy0 equal pyy')
+            strings.append('variable pzz0 equal pzz')
+            strings.append('variable pyz0 equal pyz')
+            strings.append('variable pxz0 equal pxz')
+            strings.append('variable pxy0 equal pxy')
+
+        self._lammps_input.extend(strings)
 
     def add_relax_settings(self, is_relax_lattice:bool=True):
         """
@@ -223,45 +236,45 @@ class LammpsStatic():
 
         return cell
 
-    # def get_energy(self):
-    #     """
-    #     Get energy after relax.
+    def get_energy(self):
+        """
+        Get energy after relax.
 
-    #     Args:
-    #         float: Final energy.
-    #     """
-    #     self._check_run_is_finished()
+        Args:
+            float: Final energy.
+        """
+        self._check_run_is_finished()
+        return self._lammps.extract_variable('energy', None, 0)
 
-    #     return self._lammps.variables['energy'].value
+    def get_stress(self) -> list:
+        """
+        Get stress after relax.
 
-    # def get_stress(self):
-    #     """
-    #     Get stress after relax.
+        Args:
+            list: List of [ Pxx Pyy Pzz Pyz Pzx Pxy ]
 
-    #     Args:
-    #         np.array: Stress tensor.
-    #     """
-    #     v = self._lammps.variables
-    #     stress = np.array([
-    #             [ v['Pxx'].value, v['Pxy'].value, v['Pxz'].value ],
-    #             [ v['Pxy'].value, v['Pyy'].value, v['Pyz'].value ],
-    #             [ v['Pxz'].value, v['Pyz'].value, v['Pzz'].value ],
-    #         ])
-    #     return stress
+        Todo:
+            Future return 3x3 numpy array.
+        """
+        self._check_run_is_finished()
+        keys = ['pxx0', 'pyy0', 'pzz0', 'pyz0', 'pxz0', 'pxy0']
+        stress = [ self._lammps.extract_variable(key, None, 0)
+                       for key in keys ]
+        return stress
 
-    # def get_forces(self):
-    #     """
-    #     Get forces acting on atoms after relax.
+    def get_forces(self) -> np.array:
+        """
+        Get forces acting on atoms after relax.
 
-    #     Args:
-    #         np.array: Forces acting on atoms.
-    #     """
-    #     atoms = self._lammps.atoms
-    #     forces = []
-    #     for i in range(len(atoms)):  # 'for atom in atoms' does not work
-    #         forces.append(atoms[i].force)
+        Args:
+            np.array: Forces acting on atoms.
+        """
+        self._check_run_is_finished()
+        n = self._lammps.get_natoms()
+        f = self._lammps.extract_atom('f', 3)
+        forces = np.array([[f[i][0],f[i][1],f[i][2]] for i in range(n)])
 
-    #     return np.array(forces)
+        return forces
 
     def get_lammps_input_for_phonolammps(self) -> list:
         """
