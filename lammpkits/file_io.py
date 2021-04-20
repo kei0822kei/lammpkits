@@ -25,7 +25,11 @@ def write_lammps_structure(cell:tuple,
 
 
 def get_cell_from_lammps_structure(filename:str):
+    """
+    Get cell from lammps structure.
+    """
     from lammpkits.interfaces.lammps import get_cell_from_lammps
+
     lammps_input = [
             'units metal',
             'dimension 3',

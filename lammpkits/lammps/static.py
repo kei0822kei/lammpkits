@@ -6,7 +6,7 @@ Toolkits molecular static calculation for lammps.
 
 import os
 import tempfile
-import numpy as np
+from pprint import pprint
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import write_lammps_structure
@@ -59,7 +59,7 @@ class LammpsStatic():
         """
         return self._is_run_finished
 
-    def get_initial_cell(self):
+    def get_initial_cell(self) -> tuple:
         """
         Get initial cell.
 
@@ -86,7 +86,7 @@ class LammpsStatic():
         Add structure to lammps input.
 
         Args:
-            cell: (lattice, frac_coords, symbol)
+            cell: (lattice, frac_coords, symbol).
         """
         self._check_run_is_not_finished()
         structure_file = _dump_cell(cell)
@@ -98,9 +98,7 @@ class LammpsStatic():
                 'atom_modify map array',
                 'box tilt large',
                 'read_data %s' % structure_file,
-                # 'run 0',
                 'change_box all triclinic',
-                # 'neighbor 0.3 bin',
                 'neigh_modify every 1 delay 0',
                 'neigh_modify one 5000',
                 ]
@@ -151,32 +149,36 @@ class LammpsStatic():
                 pair_coeff=pair_coeff,
                 )
 
-    def add_variables(self,
-                      add_energy:bool=True,
-                      add_stress:bool=True):
-        """
-        Add variables.
+    # def add_variables(self,
+    #                   add_energy:bool=True,
+    #                   # add_stress:bool=True,
+    #                   ):
+    #     """
+    #     Add variables.
 
-        Args:
-            add_energy: If True, variable energy is set.
-            add_stress: If True, variable stress is set.
-        """
-        val_keys = []
-        if add_energy:
-            val_keys.append(['energy', 'pe'])
-        if add_stress:
-            val_keys.append(['Pxx', 'pe'])
-            # val_keys.extend([# ['Pxx', 'pxx'],
-            #                  # ['Pyy', 'pyy'],
-            #                  # ['Pzz', 'pzz'],
-            #                  # ['Pxy', 'pxy'],
-            #                  # ['Pxz', 'pxz'],
-            #                  # ['Pyz', 'pyz'],
-            #                 ])
-        strings = []
-        for val, key in val_keys:
-            strings.append('variable {} equal {}'.format(val, key))
-        self._lammps_input.extend(strings)
+    #     Args:
+    #         add_energy: If True, variable energy is set.
+    #         add_stress: If True, variable stress is set.
+
+    #     Todo:
+    #         Currently add_stress is not working.
+    #     """
+    #     val_keys = []
+    #     if add_energy:
+    #         val_keys.append(['energy', 'pe'])
+    #     # if add_stress:
+    #     #     val_keys.append(['Pxx', 'pe'])
+    #         # val_keys.extend([# ['Pxx', 'pxx'],
+    #         #                  # ['Pyy', 'pyy'],
+    #         #                  # ['Pzz', 'pzz'],
+    #         #                  # ['Pxy', 'pxy'],
+    #         #                  # ['Pxz', 'pxz'],
+    #         #                  # ['Pyz', 'pyz'],
+    #         #                 ])
+    #     strings = []
+    #     for val, key in val_keys:
+    #         strings.append('variable {} equal {}'.format(val, key))
+    #     self._lammps_input.extend(strings)
 
     def add_relax_settings(self, is_relax_lattice:bool=True):
         """
@@ -188,23 +190,28 @@ class LammpsStatic():
         self._check_run_is_not_finished()
         strings = []
         if is_relax_lattice:
-            # strings.append('fix 1 all box/relax aniso 0.0 couple xy vmax 0.01')
             strings.append('fix 1 all box/relax tri 0')
         strings.append('min_style cg')
         strings.append('minimize 0.0 1.0e-8 100000000 1000000000')
         self._lammps_input.extend(strings)
 
-    def run_lammps(self):
+    def run_lammps(self, verbose:bool=True):
         """
         Run lammps.
+
+        Args:
+            verbose: If True, show detailed information.
         """
         self._check_run_is_not_finished()
         fname = _dump_strings(self._lammps_input)
-        print("Dump lammps input to %s" % fname)
+        if verbose:
+            print("Dump lammps input to %s" % fname)
+            print("Run lammps with the inputs:")
+            pprint(self._lammps_input)
         self._lammps.file(fname)
         self._is_run_finished = True
 
-    def get_final_cell(self):
+    def get_final_cell(self) -> tuple:
         """
         Get final cell
 
@@ -213,21 +220,19 @@ class LammpsStatic():
         """
         self._check_run_is_finished()
         cell = get_cell_from_lammps(self._lammps)
+
         return cell
-        # return get_cell_from_pylammps(
-        #         pylmp=self._lammps,
-        #         symbols=self._initial_cell[2],
-        #         )
 
-    def get_energy(self):
-        """
-        Get energy after relax.
+    # def get_energy(self):
+    #     """
+    #     Get energy after relax.
 
-        Args:
-            float: Final energy.
-        """
-        self._check_run_is_finished()
-        return self._lammps.variables['energy'].value
+    #     Args:
+    #         float: Final energy.
+    #     """
+    #     self._check_run_is_finished()
+
+    #     return self._lammps.variables['energy'].value
 
     # def get_stress(self):
     #     """
@@ -244,20 +249,21 @@ class LammpsStatic():
     #         ])
     #     return stress
 
-    def get_forces(self):
-        """
-        Get forces acting on atoms after relax.
+    # def get_forces(self):
+    #     """
+    #     Get forces acting on atoms after relax.
 
-        Args:
-            np.array: Forces acting on atoms.
-        """
-        atoms = self._lammps.atoms
-        forces = []
-        for i in range(len(atoms)):  # 'for atom in atoms' does not work
-            forces.append(atoms[i].force)
-        return np.array(forces)
+    #     Args:
+    #         np.array: Forces acting on atoms.
+    #     """
+    #     atoms = self._lammps.atoms
+    #     forces = []
+    #     for i in range(len(atoms)):  # 'for atom in atoms' does not work
+    #         forces.append(atoms[i].force)
 
-    def get_lammps_input_for_phonolammps(self):
+    #     return np.array(forces)
+
+    def get_lammps_input_for_phonolammps(self) -> list:
         """
         Get lammps input for phonolammps.
 
@@ -266,49 +272,54 @@ class LammpsStatic():
         """
         self._check_run_is_finished()
         structure_file = _dump_cell(self.get_final_cell())
-
-        from lammpkits.file_io import get_cell_from_lammps_structure, write_lammps_structure
-        cell = get_cell_from_lammps_structure("/home/mizo/jupyter/seko/structure_equiv_fix")
-        write_lammps_structure(cell, filename="/home/mizo/natai")
-
+        pot_strings = [ s for s in self._lammps_input
+                            if 'pair_style' in s or 'pair_coeff' in s ]
 
         strings = [
                 'units metal',
                 'boundary p p p',
                 'atom_style atomic',
                 'box tilt large',
-                # 'read_data %s' % structure_file,
-                # 'read_data %s' % "/home/mizo/structure_equiv_fix",
-                'read_data %s' % "/home/mizo/natai",
+                'read_data %s' % structure_file,
                 'change_box all triclinic',
-                # 'neighbor 0.3 bin',
                 'neigh_modify every 1 delay 0',
                 'neigh_modify one 5000',
                 ]
-        pot_strings = [ s for s in self._lammps_input
-                            if 'pair_style' in s or 'pair_coeff' in s ]
         strings.extend(pot_strings)
-        strings.append('neighbor 0.3 bin')
 
         return strings
 
 
-def _dump_cell(_cell):
+def _dump_cell(cell:tuple) -> str:
     """
     Return template file path.
+
+    Args:
+        cell: (lattice, frac_coords, symbol).
+
+    Returns:
+        str: Dumped file path.
     """
     _, tmp_fname = tempfile.mkstemp()
     write_lammps_structure(
-            cell=_cell,
+            cell=cell,
             filename=tmp_fname)
+
     return tmp_fname
 
 
-def _dump_strings(strings):
+def _dump_strings(strings:list) -> str:
     """
     Return template file path.
+
+    Args:
+        strings: List of strings.
+
+    Returns:
+        str: Dumped file path.
     """
     _, tmp_fname = tempfile.mkstemp()
     with open(tmp_fname, 'w') as f:
         f.write('\n'.join(strings))
+
     return tmp_fname
