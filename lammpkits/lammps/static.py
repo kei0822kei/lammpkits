@@ -8,6 +8,7 @@ import os
 import tempfile
 from pprint import pprint
 import numpy as np
+from pymatgen.core.lattice import Lattice
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import write_lammps_structure
@@ -25,6 +26,7 @@ class LammpsStatic():
         self._lammps_input = []
         self._lammps_potential_symbols = None
         self._is_run_finished = False
+        self._lattice_type = None
 
     def _check_run_is_finished(self):
         """
@@ -106,6 +108,14 @@ class LammpsStatic():
         self._initial_cell = cell
         self._lammps_potential_symbols = tuple(set(cell[2]))
         self._lammps_input.extend(strings)
+        self._set_lattice_type()
+
+    def _set_lattice_type(self):
+        lat = Lattice(self._initial_cell[0])
+        if lat.is_orthogonal:
+            self._lattice_type = 'orthogonal'
+        elif lat.is_hexagonal:
+            self._lattice_type = 'hexagonal'
 
     def add_potential_from_string(self, pair_style:str, pair_coeff:str):
         """
@@ -150,7 +160,7 @@ class LammpsStatic():
                 pair_coeff=pair_coeff,
                 )
 
-    def add_thermo(self, thermo:int=100):
+    def add_thermo(self, thermo:int=10):
         """
         Add thermo settings.
 
@@ -207,9 +217,13 @@ class LammpsStatic():
         self._check_run_is_not_finished()
         strings = []
         if is_relax_lattice:
-            strings.append('fix 1 all box/relax tri 0')
+            if self._lattice_type in ['orthogonal', 'hexagonal']:
+                strings.append('fix 1 all box/relax aniso 0')
+            else:
+                strings.append('fix 1 all box/relax tri 0')
+            # strings.append('fix 1 all box/relax z 0')
         strings.append('min_style cg')
-        strings.append('minimize 0.0 1.0e-8 100000000 1000000000')
+        strings.append('minimize 1.0e-10 1.0e-10 100000000 1000000000')
         self._lammps_input.extend(strings)
 
     def run_lammps(self, verbose:bool=True):
