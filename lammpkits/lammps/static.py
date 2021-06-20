@@ -84,6 +84,9 @@ class LammpsStatic():
         """
         print('\n'.join(self._lammps_input))
 
+    def add_string(self, string):
+        self._lammps_input.append(string)
+
     def add_structure(self, cell:tuple):
         """
         Add structure to lammps input.
@@ -160,7 +163,7 @@ class LammpsStatic():
                 pair_coeff=pair_coeff,
                 )
 
-    def add_thermo(self, thermo:int=10):
+    def add_thermo(self, thermo:int=1000):
         """
         Add thermo settings.
 
@@ -207,7 +210,10 @@ class LammpsStatic():
 
         self._lammps_input.extend(strings)
 
-    def add_relax_settings(self, is_relax_lattice:bool=True):
+    def add_relax_settings(self,
+                           is_relax_lattice:bool=True,
+                           is_relax_z:bool=False,
+                           ):
         """
         Add relax settings.
 
@@ -221,7 +227,8 @@ class LammpsStatic():
                 strings.append('fix 1 all box/relax aniso 0')
             else:
                 strings.append('fix 1 all box/relax tri 0')
-            # strings.append('fix 1 all box/relax z 0')
+        elif is_relax_z:
+            strings.append('fix 1 all box/relax z 0')
         strings.append('min_style cg')
         strings.append('minimize 1.0e-10 1.0e-10 100000000 1000000000')
         self._lammps_input.extend(strings)
