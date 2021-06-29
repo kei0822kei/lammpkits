@@ -171,12 +171,37 @@ class LammpsStatic():
             thermo: Int of thermo setting.
         """
         self._check_run_is_not_finished()
-        strings= []
+        strings = []
 
         strings.append('thermo %d' % thermo)
         strings.append('thermo_style custom step pe press '
                        + 'pxx pyy pzz pxy pxz pyz lx ly lz vol')
         strings.append('thermo_modify norm no')  # Do not normalize
+
+        self._lammps_input.extend(strings)
+
+    def add_dump(self, every_steps:int=10, basedir:str='cfg'):
+        """
+        Dump cells.
+
+        Args:
+            every_steps: Dump cells every input value steps.
+            basedir: Base directory for storing cells.
+        """
+        self._check_run_is_not_finished()
+        if self._initial_cell is None:
+            raise RuntimeError("Structure is not set.")
+        symbol = self._initial_cell[2][0]
+
+        strings = []
+        dump = "d1 all cfg {} {}/run.*.cfg mass type xs ys zs id type".format(
+                   every_steps, basedir)
+        # dump = "d1 all atom/mpiio 10 dump.atom.mpiio"
+
+        strings.append('dump %s' % dump)
+
+        # dump_modify = "d1 element %s" % symbol
+        # strings.append('dump_modify %s' % dump_modify)
 
         self._lammps_input.extend(strings)
 
