@@ -16,7 +16,8 @@ def test_lammpsrelax(ar_cell, mg_cell):
     ar_pair_style = 'pair_style lj/cut 10'
     ar_pair_coeff = 'pair_coeff * * 0.01042 3.4 10'
 
-    lmp_rlx = LammpsStatic()
+    lmp_rlx = LammpsStatic(dump_dir='./dump',
+                           raise_dir_exists_error=False)
     lmp_rlx.add_structure(
             cell=ar_cell,
             dump_filename='initial_structure.lammps',

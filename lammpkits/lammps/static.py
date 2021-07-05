@@ -17,15 +17,43 @@ from lammpkits.interfaces.lammps import get_cell_from_lammps
 class LammpsStatic():
     """
     Molecular static calculation for lammps.
+    
     """
 
-    def __init__(self):
-        self._lammps = lammps()
+    def __init__(self,
+                 dump_dir:str='.',
+                 raise_dir_exists_error:bool=True,
+                 ):
+        """
+        Init.
+
+        Args:
+            dump_dir: Dump directory.
+        """
+        self._dump_dir = None
+        self._set_dump_dir(dump_dir, raise_dir_exists_error)
+        self._lammps = lammps(
+                cmdargs=[
+                    '-log',
+                    os.path.join(dump_dir, 'log.lammps'),
+                    ]
+                )
         self._initial_cell = None
         self._lammps_input = []
         self._lammps_potential_symbols = None
         self._is_run_finished = False
         self._lattice_type = None
+
+    def _set_dump_dir(self, dump_dir, raise_dir_exists_error):
+        """
+        Create directory and set dump dir.
+        """
+        if os.path.exists(dump_dir):
+            if raise_dir_exists_error:
+                raise RuntimeError("directory: %s exists" % dump_dir)
+        else:
+            os.mkdir(dump_dir)
+        self._dump_dir = dump_dir
 
     def _check_run_is_finished(self):
         """
@@ -96,7 +124,10 @@ class LammpsStatic():
             cell: (lattice, frac_coords, symbol).
         """
         self._check_run_is_not_finished()
-        structure_fpath = os.path.join(os.getcwd(), dump_filename)
+        structure_fpath = os.path.join(
+                os.getcwd(),
+                self._dump_dir,
+                dump_filename)
         _dump_cell(cell=cell, filename=structure_fpath)
         strings = [
                 'units metal',
@@ -268,7 +299,10 @@ class LammpsStatic():
             verbose: If True, show detailed information.
         """
         self._check_run_is_not_finished()
-        lammps_fpath = os.path.join(os.getcwd(), lammps_filename)
+        lammps_fpath = os.path.join(
+                os.getcwd(),
+                self._dump_dir,
+                lammps_filename)
         _dump_strings(strings=self._lammps_input,
                       filename=lammps_fpath)
         if verbose:
@@ -340,7 +374,9 @@ class LammpsStatic():
             list: List of lammps commands for phonoLAMMPS.
         """
         self._check_run_is_finished()
-        structure_fpath = os.path.join(os.getcwd(), dump_filename)
+        structure_fpath = os.path.join(os.getcwd(),
+                                       dump_dir,
+                                       dump_filename)
         _dump_cell(cell=cell, filename=structure_fpath)
         pot_strings = [ s for s in self._lammps_input
                             if 'pair_style' in s or 'pair_coeff' in s ]
