@@ -122,3 +122,4 @@ dmypy.json
 # My settings
 potentials/
 *log.lammps
+dump
