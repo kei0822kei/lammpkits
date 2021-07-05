@@ -17,7 +17,10 @@ def test_lammpsrelax(ar_cell, mg_cell):
     ar_pair_coeff = 'pair_coeff * * 0.01042 3.4 10'
 
     lmp_rlx = LammpsStatic()
-    lmp_rlx.add_structure(cell=ar_cell)
+    lmp_rlx.add_structure(
+            cell=ar_cell,
+            dump_filename='initial_structure.lammps',
+            )
     lmp_rlx.add_potential_from_string(
             pair_style=ar_pair_style,
             pair_coeff=ar_pair_coeff,
@@ -26,7 +29,7 @@ def test_lammpsrelax(ar_cell, mg_cell):
     lmp_rlx.add_variables()
     lmp_rlx.add_relax_settings(is_relax_lattice=True)
     lmp_rlx.print_lammps_input()
-    lmp_rlx.run_lammps()
+    lmp_rlx.run_lammps(lammps_filename='in.lammps')
     energy = lmp_rlx.get_energy()
     np.testing.assert_allclose(energy, -0.346153, atol=1e-5)
 
