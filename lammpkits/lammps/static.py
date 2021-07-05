@@ -5,7 +5,6 @@ Toolkits molecular static calculation for lammps.
 """
 
 import os
-import tempfile
 from pprint import pprint
 import numpy as np
 from pymatgen.core.lattice import Lattice
@@ -18,15 +17,43 @@ from lammpkits.interfaces.lammps import get_cell_from_lammps
 class LammpsStatic():
     """
     Molecular static calculation for lammps.
+    
     """
 
-    def __init__(self):
-        self._lammps = lammps()
+    def __init__(self,
+                 dump_dir:str='.',
+                 raise_dir_exists_error:bool=True,
+                 ):
+        """
+        Init.
+
+        Args:
+            dump_dir: Dump directory.
+        """
+        self._dump_dir = None
+        self._set_dump_dir(dump_dir, raise_dir_exists_error)
+        self._lammps = lammps(
+                cmdargs=[
+                    '-log',
+                    os.path.join(dump_dir, 'log.lammps'),
+                    ]
+                )
         self._initial_cell = None
         self._lammps_input = []
         self._lammps_potential_symbols = None
         self._is_run_finished = False
         self._lattice_type = None
+
+    def _set_dump_dir(self, dump_dir, raise_dir_exists_error):
+        """
+        Create directory and set dump dir.
+        """
+        if os.path.exists(dump_dir):
+            if raise_dir_exists_error:
+                raise RuntimeError("directory: %s exists" % dump_dir)
+        else:
+            os.mkdir(dump_dir)
+        self._dump_dir = dump_dir
 
     def _check_run_is_finished(self):
         """
@@ -84,7 +111,12 @@ class LammpsStatic():
         """
         print('\n'.join(self._lammps_input))
 
-    def add_structure(self, cell:tuple):
+    def add_string(self, string):
+        self._lammps_input.append(string)
+
+    def add_structure(self,
+                      cell:tuple,
+                      dump_filename:str='initial_structure.lammps'):
         """
         Add structure to lammps input.
 
@@ -92,7 +124,11 @@ class LammpsStatic():
             cell: (lattice, frac_coords, symbol).
         """
         self._check_run_is_not_finished()
-        structure_file = _dump_cell(cell)
+        structure_fpath = os.path.join(
+                os.getcwd(),
+                self._dump_dir,
+                dump_filename)
+        _dump_cell(cell=cell, filename=structure_fpath)
         strings = [
                 'units metal',
                 'dimension 3',
@@ -100,7 +136,7 @@ class LammpsStatic():
                 'atom_style atomic',
                 'atom_modify map array',
                 'box tilt large',
-                'read_data %s' % structure_file,
+                'read_data %s' % structure_fpath,
                 'change_box all triclinic',
                 'neigh_modify every 1 delay 0',
                 'neigh_modify one 5000',
@@ -160,7 +196,7 @@ class LammpsStatic():
                 pair_coeff=pair_coeff,
                 )
 
-    def add_thermo(self, thermo:int=10):
+    def add_thermo(self, thermo:int=1000):
         """
         Add thermo settings.
 
@@ -168,12 +204,37 @@ class LammpsStatic():
             thermo: Int of thermo setting.
         """
         self._check_run_is_not_finished()
-        strings= []
+        strings = []
 
         strings.append('thermo %d' % thermo)
         strings.append('thermo_style custom step pe press '
                        + 'pxx pyy pzz pxy pxz pyz lx ly lz vol')
         strings.append('thermo_modify norm no')  # Do not normalize
+
+        self._lammps_input.extend(strings)
+
+    def add_dump(self, every_steps:int=10, basedir:str='cfg'):
+        """
+        Dump cells.
+
+        Args:
+            every_steps: Dump cells every input value steps.
+            basedir: Base directory for storing cells.
+        """
+        self._check_run_is_not_finished()
+        if self._initial_cell is None:
+            raise RuntimeError("Structure is not set.")
+        symbol = self._initial_cell[2][0]
+
+        strings = []
+        dump = "d1 all cfg {} {}/run.*.cfg mass type xs ys zs id type".format(
+                   every_steps, basedir)
+        # dump = "d1 all atom/mpiio 10 dump.atom.mpiio"
+
+        strings.append('dump %s' % dump)
+
+        # dump_modify = "d1 element %s" % symbol
+        # strings.append('dump_modify %s' % dump_modify)
 
         self._lammps_input.extend(strings)
 
@@ -207,7 +268,10 @@ class LammpsStatic():
 
         self._lammps_input.extend(strings)
 
-    def add_relax_settings(self, is_relax_lattice:bool=True):
+    def add_relax_settings(self,
+                           is_relax_lattice:bool=True,
+                           is_relax_z:bool=False,
+                           ):
         """
         Add relax settings.
 
@@ -221,12 +285,13 @@ class LammpsStatic():
                 strings.append('fix 1 all box/relax aniso 0')
             else:
                 strings.append('fix 1 all box/relax tri 0')
-            # strings.append('fix 1 all box/relax z 0')
+        elif is_relax_z:
+            strings.append('fix 1 all box/relax z 0')
         strings.append('min_style cg')
         strings.append('minimize 1.0e-10 1.0e-10 100000000 1000000000')
         self._lammps_input.extend(strings)
 
-    def run_lammps(self, verbose:bool=True):
+    def run_lammps(self, verbose:bool=True, lammps_filename:str='in.lammps'):
         """
         Run lammps.
 
@@ -234,12 +299,17 @@ class LammpsStatic():
             verbose: If True, show detailed information.
         """
         self._check_run_is_not_finished()
-        fname = _dump_strings(self._lammps_input)
+        lammps_fpath = os.path.join(
+                os.getcwd(),
+                self._dump_dir,
+                lammps_filename)
+        _dump_strings(strings=self._lammps_input,
+                      filename=lammps_fpath)
         if verbose:
-            print("Dump lammps input to %s" % fname)
+            print("Dump lammps input to %s" % lammps_fpath)
             print("Run lammps with the inputs:")
             pprint(self._lammps_input)
-        self._lammps.file(fname)
+        self._lammps.file(lammps_fpath)
         self._is_run_finished = True
 
     def get_final_cell(self) -> tuple:
@@ -294,7 +364,9 @@ class LammpsStatic():
 
         return forces
 
-    def get_lammps_input_for_phonolammps(self) -> list:
+    def get_lammps_input_for_phonolammps(
+            self,
+            dump_filename:str='final_structure.lammps') -> list:
         """
         Get lammps input for phonolammps.
 
@@ -302,7 +374,10 @@ class LammpsStatic():
             list: List of lammps commands for phonoLAMMPS.
         """
         self._check_run_is_finished()
-        structure_file = _dump_cell(self.get_final_cell())
+        structure_fpath = os.path.join(os.getcwd(),
+                                       dump_dir,
+                                       dump_filename)
+        _dump_cell(cell=cell, filename=structure_fpath)
         pot_strings = [ s for s in self._lammps_input
                             if 'pair_style' in s or 'pair_coeff' in s ]
 
@@ -311,7 +386,7 @@ class LammpsStatic():
                 'boundary p p p',
                 'atom_style atomic',
                 'box tilt large',
-                'read_data %s' % structure_file,
+                'read_data %s' % structure_fpath,
                 'change_box all triclinic',
                 'neigh_modify every 1 delay 0',
                 'neigh_modify one 5000',
@@ -321,36 +396,27 @@ class LammpsStatic():
         return strings
 
 
-def _dump_cell(cell:tuple) -> str:
+def _dump_cell(cell:tuple, filename:str):
     """
-    Return template file path.
+    Dump cell into file.
 
     Args:
         cell: (lattice, frac_coords, symbol).
-
-    Returns:
-        str: Dumped file path.
+        filename: Dump filename.
     """
-    _, tmp_fname = tempfile.mkstemp()
-    write_lammps_structure(
-            cell=cell,
-            filename=tmp_fname)
-
-    return tmp_fname
+    with open(filename, 'w') as f:
+        write_lammps_structure(
+                cell=cell,
+                filename=filename)
 
 
-def _dump_strings(strings:list) -> str:
+def _dump_strings(strings:list, filename:str):
     """
-    Return template file path.
+    Dump lammps settings into file.
 
     Args:
         strings: List of strings.
-
-    Returns:
-        str: Dumped file path.
+        filename: Dump filename.
     """
-    _, tmp_fname = tempfile.mkstemp()
-    with open(tmp_fname, 'w') as f:
+    with open(filename, 'w') as f:
         f.write('\n'.join(strings))
-
-    return tmp_fname
