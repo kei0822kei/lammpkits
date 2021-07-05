@@ -375,9 +375,10 @@ class LammpsStatic():
         """
         self._check_run_is_finished()
         structure_fpath = os.path.join(os.getcwd(),
-                                       dump_dir,
+                                       self._dump_dir,
                                        dump_filename)
-        _dump_cell(cell=cell, filename=structure_fpath)
+        final_cell = self.get_final_cell()
+        _dump_cell(cell=final_cell, filename=structure_fpath)
         pot_strings = [ s for s in self._lammps_input
                             if 'pair_style' in s or 'pair_coeff' in s ]
 
