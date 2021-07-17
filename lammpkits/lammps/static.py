@@ -48,11 +48,12 @@ class LammpsStatic():
         """
         Create directory and set dump dir.
         """
-        if os.path.exists(dump_dir):
-            if raise_dir_exists_error:
-                raise RuntimeError("directory: %s exists" % dump_dir)
-        else:
-            os.mkdir(dump_dir)
+        if dump_dir != '.':
+            if os.path.exists(dump_dir):
+                if raise_dir_exists_error:
+                    raise RuntimeError("directory: %s exists" % dump_dir)
+            else:
+                os.mkdir(dump_dir)
         self._dump_dir = dump_dir
 
     def _check_run_is_finished(self):
