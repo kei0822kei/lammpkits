@@ -214,7 +214,7 @@ class LammpsStatic():
 
         self._lammps_input.extend(strings)
 
-    def add_dump(self, every_steps:int=10, basedir:str='cfg'):
+    def add_dump_structure(self, every_steps:int=10, basedir:str='cfg'):
         """
         Dump cells.
 
@@ -225,11 +225,15 @@ class LammpsStatic():
         self._check_run_is_not_finished()
         if self._initial_cell is None:
             raise RuntimeError("Structure is not set.")
+        dump_structure_dir = os.path.join(self._dump_dir, basedir)
+
         symbol = self._initial_cell[2][0]
 
         strings = []
+        strings.append(
+                "shell mkdir %s" % dump_structure_dir)
         dump = "d1 all cfg {} {}/run.*.cfg mass type xs ys zs id type".format(
-                   every_steps, basedir)
+                   every_steps, dump_structure_dir)
         # dump = "d1 all atom/mpiio 10 dump.atom.mpiio"
 
         strings.append('dump %s' % dump)
