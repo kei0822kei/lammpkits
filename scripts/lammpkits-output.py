@@ -5,6 +5,7 @@
 This script deals with lammps output.
 """
 
+from pprint import pprint
 import argparse
 from matplotlib import pyplot as plt
 from lammpkits.lammps.output import LammpsOutput
@@ -34,10 +35,14 @@ def main(logfile,
          is_plot,
          ):
     lmp_out = LammpsOutput(logfile=logfile)
+    print("Load: %s" % logfile)
+    print("Available keys are: {}".format(lmp_out.get_keys()))
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     if is_plot:
-        lmp_out.plot_transition(ax=ax, key=key)
+        ax = lmp_out.plot_transition(ax=ax, key=key)
+        plt.show()
 
 
 if __name__ == '__main__':
