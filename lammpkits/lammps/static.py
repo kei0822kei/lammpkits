@@ -211,7 +211,7 @@ class LammpsStatic():
 
         strings.append('thermo %d' % thermo)
         strings.append('thermo_style custom step pe press '
-                       + 'pxx pyy pzz pxy pxz pyz lx ly lz vol')
+                       + 'pxx pyy pzz pxy pxz pyz lx ly lz vol fmax fnorm')
         strings.append('thermo_modify norm no')  # Do not normalize
 
         self._lammps_input.extend(strings)
@@ -236,13 +236,7 @@ class LammpsStatic():
                 "shell mkdir %s" % dump_structure_dir)
         dump = "d1 all cfg {} {}/run.*.cfg mass type xs ys zs id type".format(
                    every_steps, dump_structure_dir)
-        # dump = "d1 all atom/mpiio 10 dump.atom.mpiio"
-
         strings.append('dump %s' % dump)
-
-        # dump_modify = "d1 element %s" % symbol
-        # strings.append('dump_modify %s' % dump_modify)
-
         self._lammps_input.extend(strings)
 
     def add_variables(self,
@@ -276,6 +270,10 @@ class LammpsStatic():
         self._lammps_input.extend(strings)
 
     def add_relax_settings(self,
+                           etol:float=1e-10,
+                           ftol:float=1e-10,
+                           maxiter:int=100000,
+                           maxeval:int=100000,
                            is_relax_lattice:bool=True,
                            is_relax_z:bool=False,
                            ):
@@ -295,7 +293,8 @@ class LammpsStatic():
         elif is_relax_z:
             strings.append('fix 1 all box/relax z 0')
         strings.append('min_style cg')
-        strings.append('minimize 1.0e-10 1.0e-10 100000000 1000000000')
+        strings.append('minimize {} {} {} {}'.format(
+            etol, ftol, maxiter, maxeval))
         self._lammps_input.extend(strings)
 
     def run_lammps(self, verbose:bool=True, lammps_filename:str='in.lammps'):
