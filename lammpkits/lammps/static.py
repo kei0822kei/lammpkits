@@ -10,7 +10,7 @@ import numpy as np
 from pymatgen.core.lattice import Lattice
 from lammps import lammps
 import lammpkits
-from lammpkits.file_io import write_lammps_structure
+from lammpkits.file_io import dump_cell
 from lammpkits.interfaces.lammps import get_cell_from_lammps
 
 
@@ -129,7 +129,7 @@ class LammpsStatic():
                 os.getcwd(),
                 self._dump_dir,
                 dump_filename)
-        _dump_cell(cell=cell, filename=structure_fpath)
+        dump_cell(cell=cell, filename=structure_fpath, style='lammps')
         strings = [
                 'units metal',
                 'dimension 3',
@@ -303,13 +303,17 @@ class LammpsStatic():
         Args:
             verbose: If True, show detailed information.
         """
+        def dump_strings(strings:list, filename:str):
+            with open(filename, 'w') as f:
+                f.write('\n'.join(strings))
+
         self._check_run_is_not_finished()
         lammps_fpath = os.path.join(
                 os.getcwd(),
                 self._dump_dir,
                 lammps_filename)
-        _dump_strings(strings=self._lammps_input,
-                      filename=lammps_fpath)
+        with open(lammps_fpath, 'w') as f:
+            f.write('\n'.join(self._lammps_input))
         if verbose:
             print("Dump lammps input to %s" % lammps_fpath)
             print("Run lammps with the inputs:")
@@ -383,7 +387,7 @@ class LammpsStatic():
                                        self._dump_dir,
                                        dump_filename)
         final_cell = self.get_final_cell()
-        _dump_cell(cell=final_cell, filename=structure_fpath)
+        dump_cell(cell=final_cell, filename=structure_fpath, style='lammps')
         pot_strings = [ s for s in self._lammps_input
                             if 'pair_style' in s or 'pair_coeff' in s ]
 
@@ -401,28 +405,40 @@ class LammpsStatic():
 
         return strings
 
+    def as_dict(self):
+        """
+        Get dict including all lammps inputs and outputs.
+        """
+        self._check_run_is_finished()
+        logfile = os.path.join(self._dump_dir, 'log.lammps')
+        keys, data = get_data_from_log_lammps(logfile)
+        log_lammps = {'keys': keys, 'data': data}
 
-def _dump_cell(cell:tuple, filename:str):
-    """
-    Dump cell into file.
+        dic = {
+            'lammps_input': self._lammps_input,
+            'initial_cell': self._initial_cell,
+            'final_cell': self.get_final_cell(),
+            'log_lammps': log_lammps.to_list(),
+        }
 
-    Args:
-        cell: (lattice, frac_coords, symbol).
-        filename: Dump filename.
-    """
-    with open(filename, 'w') as f:
-        write_lammps_structure(
-                cell=cell,
-                filename=filename)
+        return dic
+
+    def dump_lammps(self, filename='lammpkits.yaml'):
+        """
+        Dump lammps.
+
+        Args:
+            filename: Dump file name.
+        """
+        import yaml
+        try:
+            from yaml import CLoader as Loader, CDumper as Dumper
+        except ImportError:
+            from yaml import Loader, Dumper
+        from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
+
+        dic = self.as_dict()
+        with open(filename, 'w') as f:
+            yaml.dump(dic, f, indent=4, default_flow_style=False, Dumper=Dumper)
 
 
-def _dump_strings(strings:list, filename:str):
-    """
-    Dump lammps settings into file.
-
-    Args:
-        strings: List of strings.
-        filename: Dump filename.
-    """
-    with open(filename, 'w') as f:
-        f.write('\n'.join(strings))
