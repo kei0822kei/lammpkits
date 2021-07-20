@@ -34,3 +34,21 @@ def get_cell_from_pymatgen_structure(pmgstructure:Structure) -> tuple:
     symbols = [ specie.value for specie in pmgstructure.species ]
 
     return (lattice, scaled_positions, symbols)
+
+
+def get_data_from_log_lammps(logfile='log.lammps') -> tuple:
+    """
+    Get data from log.lammps.
+
+    Args:
+        logfile: Lammps logfile.
+
+    Return:
+        tuple: (keys [list], data [np.array]).
+    """
+    from pymatgen.io.lammps.outputs import parse_lammps_log
+    df = parse_lammps_log(logfile)[0]
+    keys = df.keys().tolist()
+    data = df.T.to_numpy()
+
+    return (keys, data)
