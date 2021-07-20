@@ -6,12 +6,14 @@ Toolkits molecular static calculation for lammps.
 
 import os
 from pprint import pprint
+import json
 import numpy as np
 from pymatgen.core.lattice import Lattice
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import dump_cell
 from lammpkits.interfaces.lammps import get_cell_from_lammps
+from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
 
 
 class LammpsStatic():
@@ -303,10 +305,6 @@ class LammpsStatic():
         Args:
             verbose: If True, show detailed information.
         """
-        def dump_strings(strings:list, filename:str):
-            with open(filename, 'w') as f:
-                f.write('\n'.join(strings))
-
         self._check_run_is_not_finished()
         lammps_fpath = os.path.join(
                 os.getcwd(),
@@ -418,27 +416,26 @@ class LammpsStatic():
             'lammps_input': self._lammps_input,
             'initial_cell': self._initial_cell,
             'final_cell': self.get_final_cell(),
-            'log_lammps': log_lammps.to_list(),
+            'log_lammps': log_lammps,
         }
 
         return dic
 
-    def dump_lammps(self, filename='lammpkits.yaml'):
+    def dump_lammps(self, filename='lammpkits.json'):
         """
         Dump lammps.
 
         Args:
             filename: Dump file name.
         """
-        import yaml
-        try:
-            from yaml import CLoader as Loader, CDumper as Dumper
-        except ImportError:
-            from yaml import Loader, Dumper
-        from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
 
         dic = self.as_dict()
+        dic['initial_cell'] = [ dic['initial_cell'][0].tolist(),
+                                dic['initial_cell'][1].tolist(),
+                                dic['initial_cell'][2] ]
+        dic['final_cell'] = [ dic['final_cell'][0].tolist(),
+                                dic['final_cell'][1].tolist(),
+                                dic['final_cell'][2] ]
+        dic['log_lammps']['data'] = dic['log_lammps']['data'].tolist()
         with open(filename, 'w') as f:
-            yaml.dump(dic, f, indent=4, default_flow_style=False, Dumper=Dumper)
-
-
+            json.dump(dic, f, indent=4)

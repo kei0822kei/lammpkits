@@ -49,6 +49,6 @@ def get_data_from_log_lammps(logfile='log.lammps') -> tuple:
     from pymatgen.io.lammps.outputs import parse_lammps_log
     df = parse_lammps_log(logfile)[0]
     keys = df.keys().tolist()
-    data = df.to_numpy()
+    data = df.T.to_numpy()
 
     return (keys, data)

@@ -48,7 +48,7 @@ class LammpsOutput():
         if not key in self._keys:
             raise RuntimeError("key: {} is not exist.".format(key))
         idx = self._keys.index(key)
-        key_data = self._data[:,idx]
+        key_data = self._data[idx]
 
         return key_data
 
