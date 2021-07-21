@@ -19,7 +19,6 @@ from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
 class LammpsStatic():
     """
     Molecular static calculation for lammps.
-    
     """
 
     def __init__(self,
@@ -31,6 +30,11 @@ class LammpsStatic():
 
         Args:
             dump_dir: Dump directory.
+            raise_dir_exists_error: Raise error if dump_dir exists.
+
+        Raises:
+            RuntimeError: Dump_dir already exists. This is activated when
+                          'raise_dir_exists_error' is True.
         """
         self._dump_dir = None
         self._set_dump_dir(dump_dir, raise_dir_exists_error)
@@ -210,7 +214,7 @@ class LammpsStatic():
         strings = []
 
         strings.append('thermo %d' % thermo)
-        strings.append('thermo_style custom step pe press '
+        strings.append('thermo_style custom dt step pe press '
                        + 'pxx pyy pzz pxy pxz pyz lx ly lz vol fmax fnorm')
         strings.append('thermo_modify norm no')  # Do not normalize
 
@@ -229,44 +233,12 @@ class LammpsStatic():
             raise RuntimeError("Structure is not set.")
         dump_structure_dir = os.path.join(self._dump_dir, basedir)
 
-        symbol = self._initial_cell[2][0]
-
         strings = []
         strings.append(
                 "shell mkdir %s" % dump_structure_dir)
         dump = "d1 all cfg {} {}/run.*.cfg mass type xs ys zs id type".format(
                    every_steps, dump_structure_dir)
         strings.append('dump %s' % dump)
-        self._lammps_input.extend(strings)
-
-    def add_variables(self,
-                      add_energy:bool=True,
-                      add_stress:bool=True,
-                      ):
-        """
-        Add variables.
-
-        Args:
-            add_energy: If True, variable energy is set.
-            add_stress: If True, variable stress is set.
-
-        Todo:
-            Currently add_stress is not working.
-        """
-        self._check_run_is_not_finished()
-
-        strings = []
-        if add_energy:
-            strings.append('variable energy equal pe')
-
-        if add_stress:
-            strings.append('variable pxx0 equal pxx')
-            strings.append('variable pyy0 equal pyy')
-            strings.append('variable pzz0 equal pzz')
-            strings.append('variable pyz0 equal pyz')
-            strings.append('variable pxz0 equal pxz')
-            strings.append('variable pxy0 equal pxy')
-
         self._lammps_input.extend(strings)
 
     def add_relax_settings(self,
@@ -338,7 +310,7 @@ class LammpsStatic():
             float: Final energy.
         """
         self._check_run_is_finished()
-        return self._lammps.extract_variable('energy', None, 0)
+        return self._lammps.get_thermo('pe')
 
     def get_stress(self) -> list:
         """
