@@ -8,7 +8,6 @@ import os
 from pprint import pprint
 import json
 import numpy as np
-from pymatgen.core.lattice import Lattice
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import dump_cell
@@ -206,13 +205,13 @@ class LammpsStatic():
         strings = []
 
         strings.append('thermo %d' % thermo)
-        strings.append('thermo_style custom dt step pe press '
+        strings.append('thermo_style custom step pe press '
                        + 'pxx pyy pzz pxy pxz pyz lx ly lz vol fmax fnorm')
         strings.append('thermo_modify norm no')  # Do not normalize
 
         self._lammps_input.extend(strings)
 
-    def add_dump_structure(self, every_steps:int=10, basedir:str='cfg'):
+    def add_dump(self, every_steps:int=10, basedir:str='cfg'):
         """
         Dump cells.
 
@@ -233,32 +232,33 @@ class LammpsStatic():
         strings.append('dump %s' % dump)
         self._lammps_input.extend(strings)
 
-    def add_fix_box_relax(keyvals:dict):
+    def add_fix_box_relax(self, keyvals:dict):
         """
         Add fix box/relax command. Available keys and values are shown in
         https://docs.lammps.org/fix_box_relax.html.
 
         Args:
             keyvals: If keyvals = {'x': 0, 'y': 0}, then fix box/relax command
-                     is added as 'fix box/relax x 0 y 0'
+                     is added as 'fix box/relax x 0 y 0'.
         """
         keys_vals = []
-        for key in keys_vals:
-            keys_vals.extend(key, keys_vals[key])
-        strings = 'fix box/relax %s' % ' '.join(map(str, keys_vals))
-        self._lammps_input.extend(strings)
+        for key in keyvals:
+            keys_vals.extend([key, keyvals[key]])
+        string = 'fix f1 all box/relax %s' % ' '.join(map(str, keys_vals))
+        self._lammps_input.append(string)
 
-    def add_relax_settings(self,
-                           etol:float=1e-10,
-                           ftol:float=1e-10,
-                           maxiter:int=100000,
-                           maxeval:int=100000,
-                           ):
+    def add_minimize(self,
+                     etol:float=1e-10,
+                     ftol:float=1e-10,
+                     maxiter:int=100000,
+                     maxeval:int=100000,
+                     ):
         """
         Add relax settings.
 
-        Args:
-            is_relax_lattice: If True, lattice is relaxed.
+        Note:
+            The details of input args are shown in
+            https://docs.lammps.org/minimize.html.
         """
         self._check_run_is_not_finished()
         strings = []
@@ -321,9 +321,8 @@ class LammpsStatic():
             Future return 3x3 numpy array.
         """
         self._check_run_is_finished()
-        keys = ['pxx0', 'pyy0', 'pzz0', 'pyz0', 'pxz0', 'pxy0']
-        stress = [ self._lammps.extract_variable(key, None, 0)
-                       for key in keys ]
+        keys = ['pxx', 'pyy', 'pzz', 'pyz', 'pxz', 'pxy']
+        stress = [ self._lammps.get_thermo(key) for key in keys ]
         return stress
 
     def get_forces(self) -> np.array:
