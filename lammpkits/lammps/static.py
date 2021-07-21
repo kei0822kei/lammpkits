@@ -151,14 +151,6 @@ class LammpsStatic():
         self._initial_cell = cell
         self._lammps_potential_symbols = tuple(set(cell[2]))
         self._lammps_input.extend(strings)
-        self._set_lattice_type()
-
-    def _set_lattice_type(self):
-        lat = Lattice(self._initial_cell[0])
-        if lat.is_orthogonal:
-            self._lattice_type = 'orthogonal'
-        elif lat.is_hexagonal:
-            self._lattice_type = 'hexagonal'
 
     def add_potential_from_string(self, pair_style:str, pair_coeff:str):
         """
@@ -241,13 +233,26 @@ class LammpsStatic():
         strings.append('dump %s' % dump)
         self._lammps_input.extend(strings)
 
+    def add_fix_box_relax(keyvals:dict):
+        """
+        Add fix box/relax command. Available keys and values are shown in
+        https://docs.lammps.org/fix_box_relax.html.
+
+        Args:
+            keyvals: If keyvals = {'x': 0, 'y': 0}, then fix box/relax command
+                     is added as 'fix box/relax x 0 y 0'
+        """
+        keys_vals = []
+        for key in keys_vals:
+            keys_vals.extend(key, keys_vals[key])
+        strings = 'fix box/relax %s' % ' '.join(map(str, keys_vals))
+        self._lammps_input.extend(strings)
+
     def add_relax_settings(self,
                            etol:float=1e-10,
                            ftol:float=1e-10,
                            maxiter:int=100000,
                            maxeval:int=100000,
-                           is_relax_lattice:bool=True,
-                           is_relax_z:bool=False,
                            ):
         """
         Add relax settings.
@@ -257,13 +262,6 @@ class LammpsStatic():
         """
         self._check_run_is_not_finished()
         strings = []
-        if is_relax_lattice:
-            if self._lattice_type in ['orthogonal', 'hexagonal']:
-                strings.append('fix 1 all box/relax aniso 0')
-            else:
-                strings.append('fix 1 all box/relax tri 0')
-        elif is_relax_z:
-            strings.append('fix 1 all box/relax z 0')
         strings.append('min_style cg')
         strings.append('minimize {} {} {} {}'.format(
             etol, ftol, maxiter, maxeval))
