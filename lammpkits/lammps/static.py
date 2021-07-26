@@ -58,7 +58,7 @@ class LammpsStatic():
                 if raise_dir_exists_error:
                     raise RuntimeError("directory: %s exists" % dump_dir)
             else:
-                os.mkdir(dump_dir)
+                os.makedirs(dump_dir)
         self._dump_dir = dump_dir
 
     def _check_run_is_finished(self):
@@ -181,10 +181,11 @@ class LammpsStatic():
             and add potentials.
         """
         self._check_run_is_not_finished()
+        symbol = self._initial_cell[2][0]
         pot_dir = os.path.join(os.path.dirname(os.path.dirname(
                                                lammpkits.__file__)),
                                'potentials')
-        potential_file_path = os.path.join(pot_dir, pot_file)
+        potential_file_path = os.path.join(pot_dir, symbol, pot_file)
         pair_coeff = 'pair_coeff * * {} {}'.format(
                 potential_file_path,
                 ' '.join(self._lammps_potential_symbols),
@@ -211,12 +212,12 @@ class LammpsStatic():
 
         self._lammps_input.extend(strings)
 
-    def add_dump(self, every_steps:int=10, basedir:str='cfg'):
+    def add_dump(self, dump_steps:int=10, basedir:str='cfg'):
         """
         Dump cells.
 
         Args:
-            every_steps: Dump cells every input value steps.
+            dump_steps: Dump cells every input value steps.
             basedir: Base directory for storing cells.
         """
         self._check_run_is_not_finished()
@@ -228,7 +229,7 @@ class LammpsStatic():
         strings.append(
                 "shell mkdir %s" % dump_structure_dir)
         dump = "d1 all cfg {} {}/run.*.cfg mass type xs ys zs id type".format(
-                   every_steps, dump_structure_dir)
+                   dump_steps, dump_structure_dir)
         strings.append('dump %s' % dump)
         self._lammps_input.extend(strings)
 
@@ -247,6 +248,13 @@ class LammpsStatic():
         string = 'fix f1 all box/relax %s' % ' '.join(map(str, keys_vals))
         self._lammps_input.append(string)
 
+    def add_unfix(self):
+        """
+        Add unfix.
+        """
+        self._check_run_is_not_finished()
+        self._lammps_input.extend('unfix f1')
+
     def add_minimize(self,
                      etol:float=1e-10,
                      ftol:float=1e-10,
@@ -262,6 +270,7 @@ class LammpsStatic():
         """
         self._check_run_is_not_finished()
         strings = []
+        strings.append('reset_timestep 0')
         strings.append('min_style cg')
         strings.append('minimize {} {} {} {}'.format(
             etol, ftol, maxiter, maxeval))
