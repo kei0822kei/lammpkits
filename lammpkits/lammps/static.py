@@ -8,7 +8,6 @@ import os
 from pprint import pprint
 import json
 import numpy as np
-from pymatgen.core.lattice import Lattice
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import dump_cell
@@ -19,7 +18,6 @@ from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
 class LammpsStatic():
     """
     Molecular static calculation for lammps.
-    
     """
 
     def __init__(self,
@@ -31,6 +29,11 @@ class LammpsStatic():
 
         Args:
             dump_dir: Dump directory.
+            raise_dir_exists_error: Raise error if dump_dir exists.
+
+        Raises:
+            RuntimeError: Dump_dir already exists. This is activated when
+                          'raise_dir_exists_error' is True.
         """
         self._dump_dir = None
         self._set_dump_dir(dump_dir, raise_dir_exists_error)
@@ -55,7 +58,7 @@ class LammpsStatic():
                 if raise_dir_exists_error:
                     raise RuntimeError("directory: %s exists" % dump_dir)
             else:
-                os.mkdir(dump_dir)
+                os.makedirs(dump_dir)
         self._dump_dir = dump_dir
 
     def _check_run_is_finished(self):
@@ -147,14 +150,6 @@ class LammpsStatic():
         self._initial_cell = cell
         self._lammps_potential_symbols = tuple(set(cell[2]))
         self._lammps_input.extend(strings)
-        self._set_lattice_type()
-
-    def _set_lattice_type(self):
-        lat = Lattice(self._initial_cell[0])
-        if lat.is_orthogonal:
-            self._lattice_type = 'orthogonal'
-        elif lat.is_hexagonal:
-            self._lattice_type = 'hexagonal'
 
     def add_potential_from_string(self, pair_style:str, pair_coeff:str):
         """
@@ -186,10 +181,11 @@ class LammpsStatic():
             and add potentials.
         """
         self._check_run_is_not_finished()
+        symbol = self._initial_cell[2][0]
         pot_dir = os.path.join(os.path.dirname(os.path.dirname(
                                                lammpkits.__file__)),
                                'potentials')
-        potential_file_path = os.path.join(pot_dir, pot_file)
+        potential_file_path = os.path.join(pot_dir, symbol, pot_file)
         pair_coeff = 'pair_coeff * * {} {}'.format(
                 potential_file_path,
                 ' '.join(self._lammps_potential_symbols),
@@ -211,17 +207,17 @@ class LammpsStatic():
 
         strings.append('thermo %d' % thermo)
         strings.append('thermo_style custom step pe press '
-                       + 'pxx pyy pzz pxy pxz pyz lx ly lz vol')
+                       + 'pxx pyy pzz pxy pxz pyz lx ly lz vol fmax fnorm')
         strings.append('thermo_modify norm no')  # Do not normalize
 
         self._lammps_input.extend(strings)
 
-    def add_dump_structure(self, every_steps:int=10, basedir:str='cfg'):
+    def add_dump(self, dump_steps:int=10, basedir:str='cfg'):
         """
         Dump cells.
 
         Args:
-            every_steps: Dump cells every input value steps.
+            dump_steps: Dump cells every input value steps.
             basedir: Base directory for storing cells.
         """
         self._check_run_is_not_finished()
@@ -229,73 +225,55 @@ class LammpsStatic():
             raise RuntimeError("Structure is not set.")
         dump_structure_dir = os.path.join(self._dump_dir, basedir)
 
-        symbol = self._initial_cell[2][0]
-
         strings = []
         strings.append(
                 "shell mkdir %s" % dump_structure_dir)
         dump = "d1 all cfg {} {}/run.*.cfg mass type xs ys zs id type".format(
-                   every_steps, dump_structure_dir)
-        # dump = "d1 all atom/mpiio 10 dump.atom.mpiio"
-
+                   dump_steps, dump_structure_dir)
         strings.append('dump %s' % dump)
-
-        # dump_modify = "d1 element %s" % symbol
-        # strings.append('dump_modify %s' % dump_modify)
-
         self._lammps_input.extend(strings)
 
-    def add_variables(self,
-                      add_energy:bool=True,
-                      add_stress:bool=True,
-                      ):
+    def add_fix_box_relax(self, keyvals:dict):
         """
-        Add variables.
+        Add fix box/relax command. Available keys and values are shown in
+        https://docs.lammps.org/fix_box_relax.html.
 
         Args:
-            add_energy: If True, variable energy is set.
-            add_stress: If True, variable stress is set.
+            keyvals: If keyvals = {'x': 0, 'y': 0}, then fix box/relax command
+                     is added as 'fix box/relax x 0 y 0'.
+        """
+        keys_vals = []
+        for key in keyvals:
+            keys_vals.extend([key, keyvals[key]])
+        string = 'fix f1 all box/relax %s' % ' '.join(map(str, keys_vals))
+        self._lammps_input.append(string)
 
-        Todo:
-            Currently add_stress is not working.
+    def add_unfix(self):
+        """
+        Add unfix.
         """
         self._check_run_is_not_finished()
+        self._lammps_input.extend('unfix f1')
 
-        strings = []
-        if add_energy:
-            strings.append('variable energy equal pe')
-
-        if add_stress:
-            strings.append('variable pxx0 equal pxx')
-            strings.append('variable pyy0 equal pyy')
-            strings.append('variable pzz0 equal pzz')
-            strings.append('variable pyz0 equal pyz')
-            strings.append('variable pxz0 equal pxz')
-            strings.append('variable pxy0 equal pxy')
-
-        self._lammps_input.extend(strings)
-
-    def add_relax_settings(self,
-                           is_relax_lattice:bool=True,
-                           is_relax_z:bool=False,
-                           ):
+    def add_minimize(self,
+                     etol:float=1e-10,
+                     ftol:float=1e-10,
+                     maxiter:int=100000,
+                     maxeval:int=100000,
+                     ):
         """
         Add relax settings.
 
-        Args:
-            is_relax_lattice: If True, lattice is relaxed.
+        Note:
+            The details of input args are shown in
+            https://docs.lammps.org/minimize.html.
         """
         self._check_run_is_not_finished()
         strings = []
-        if is_relax_lattice:
-            if self._lattice_type in ['orthogonal', 'hexagonal']:
-                strings.append('fix 1 all box/relax aniso 0')
-            else:
-                strings.append('fix 1 all box/relax tri 0')
-        elif is_relax_z:
-            strings.append('fix 1 all box/relax z 0')
+        strings.append('reset_timestep 0')
         strings.append('min_style cg')
-        strings.append('minimize 1.0e-10 1.0e-10 100000000 1000000000')
+        strings.append('minimize {} {} {} {}'.format(
+            etol, ftol, maxiter, maxeval))
         self._lammps_input.extend(strings)
 
     def run_lammps(self, verbose:bool=True, lammps_filename:str='in.lammps'):
@@ -339,7 +317,7 @@ class LammpsStatic():
             float: Final energy.
         """
         self._check_run_is_finished()
-        return self._lammps.extract_variable('energy', None, 0)
+        return self._lammps.get_thermo('pe')
 
     def get_stress(self) -> list:
         """
@@ -352,9 +330,8 @@ class LammpsStatic():
             Future return 3x3 numpy array.
         """
         self._check_run_is_finished()
-        keys = ['pxx0', 'pyy0', 'pzz0', 'pyz0', 'pxz0', 'pxy0']
-        stress = [ self._lammps.extract_variable(key, None, 0)
-                       for key in keys ]
+        keys = ['pxx', 'pyy', 'pzz', 'pyz', 'pxz', 'pxy']
+        stress = [ self._lammps.get_thermo(key) for key in keys ]
         return stress
 
     def get_forces(self) -> np.array:
