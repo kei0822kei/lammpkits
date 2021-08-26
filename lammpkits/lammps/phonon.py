@@ -11,6 +11,7 @@ class LammpsPhonon():
     """
 
     def __init__(self,
+                 in_lammps:str,
                  dump_dir:str='.',
                  raise_dir_exists_error:bool=True,
                  ):
@@ -27,14 +28,17 @@ class LammpsPhonon():
         """
         self._dump_dir = None
         self._set_dump_dir(dump_dir, raise_dir_exists_error)
-        self._lammps = lammps(
-                cmdargs=[
-                    '-log',
-                    os.path.join(dump_dir, 'log.lammps'),
-                    ]
-                )
-        self._initial_cell = None
-        self._lammps_input = []
-        self._lammps_potential_symbols = None
-        self._is_run_finished = False
-        self._lattice_type = None
+        self._lammps_input = in_lammps
+
+    def _set_dump_dir(self, dump_dir, raise_dir_exists_error):
+        """
+        Create directory and set dump dir.
+        """
+        if dump_dir != '.':
+            if os.path.exists(dump_dir):
+                if raise_dir_exists_error:
+                    raise RuntimeError("directory: %s exists" % dump_dir)
+            else:
+                os.makedirs(dump_dir)
+        self._dump_dir = dump_dir
+

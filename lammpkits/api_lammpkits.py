@@ -60,7 +60,7 @@ class Lammpkits():
             dump_steps:int=50,
             ):
         """
-        Set LammpsStatic.
+        Set LammpsStatic and LammpsOutput.
 
         Args:
             pair_style: Key 'pair_style' setting for lammps input.
@@ -68,6 +68,7 @@ class Lammpkits():
             minimize_settings: Minimize settings. See Examples.
             base_dir: Dump base directory.
             dump_steps: Dump every 'dump_steps'.
+            is_dump_lammps: If True, dump lammps results.
 
         Examples:
             Here is the example for 'minimize_settings'.
@@ -125,3 +126,10 @@ class Lammpkits():
         self._final_cell = final_cell
         self._statics = statics
         self._outputs = outputs
+
+    def run_lammps_phonon(
+            self,
+            ):
+        """
+        Run lammps phonon.
+        """
