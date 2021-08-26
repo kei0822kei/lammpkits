@@ -11,7 +11,8 @@ import numpy as np
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import dump_cell
-from lammpkits.interfaces.lammps import get_cell_from_lammps
+from lammpkits.interfaces.lammps import (get_cell_from_lammps,
+                                         get_lammps_input_for_phonolammps)
 from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
 
 
@@ -348,37 +349,38 @@ class LammpsStatic():
 
         return forces
 
-    def get_lammps_input_for_phonolammps(
-            self,
-            dump_filename:str='final_structure.lammps') -> list:
-        """
-        Get lammps input for phonolammps.
+    # def get_lammps_input_for_phonolammps(
+    #         self,
+    #         dump_filename:str='final_structure.lammps') -> list:
+    #     """
+    #     Get lammps input for phonolammps.
 
-        Args:
-            list: List of lammps commands for phonoLAMMPS.
-        """
-        self._check_run_is_finished()
-        structure_fpath = os.path.join(os.getcwd(),
-                                       self._dump_dir,
-                                       dump_filename)
-        final_cell = self.get_final_cell()
-        dump_cell(cell=final_cell, filename=structure_fpath, style='lammps')
-        pot_strings = [ s for s in self._lammps_input
-                            if 'pair_style' in s or 'pair_coeff' in s ]
+    #     Args:
+    #         list: List of lammps commands for phonoLAMMPS.
+    #     """
+    #     strings = get_lammps_input_for_phonolammps()
+    #     self._check_run_is_finished()
+    #     structure_fpath = os.path.join(os.getcwd(),
+    #                                    self._dump_dir,
+    #                                    dump_filename)
+    #     final_cell = self.get_final_cell()
+    #     dump_cell(cell=final_cell, filename=structure_fpath, style='lammps')
+    #     pot_strings = [ s for s in self._lammps_input
+    #                         if 'pair_style' in s or 'pair_coeff' in s ]
 
-        strings = [
-                'units metal',
-                'boundary p p p',
-                'atom_style atomic',
-                'box tilt large',
-                'read_data %s' % structure_fpath,
-                'change_box all triclinic',
-                'neigh_modify every 1 delay 0',
-                'neigh_modify one 5000',
-                ]
-        strings.extend(pot_strings)
+    #     strings = [
+    #             'units metal',
+    #             'boundary p p p',
+    #             'atom_style atomic',
+    #             'box tilt large',
+    #             'read_data %s' % structure_fpath,
+    #             'change_box all triclinic',
+    #             'neigh_modify every 1 delay 0',
+    #             'neigh_modify one 5000',
+    #             ]
+    #     strings.extend(pot_strings)
 
-        return strings
+    #     return strings
 
     def as_dict(self):
         """

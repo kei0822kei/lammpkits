@@ -14,7 +14,7 @@ class LammpsPhonon():
     """
 
     def __init__(self,
-                 in_lammps:str,
+                 in_lammps:list,
                  dump_dir:str='.',
                  raise_dir_exists_error:bool=True,
                  ):
@@ -22,6 +22,7 @@ class LammpsPhonon():
         Init.
 
         Args:
+            in_lammps: Lammps input for phonon.
             dump_dir: Dump directory.
             raise_dir_exists_error: Raise error if dump_dir exists.
 

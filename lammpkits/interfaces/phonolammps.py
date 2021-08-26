@@ -6,6 +6,7 @@ Interfaces for PhononLammps.
 
 import numpy as np
 from phonolammps import Phonolammps
+from lammpkits.file_io import dump_cell
 
 
 def get_phonolammps(lammps_input:list,
@@ -50,3 +51,34 @@ def get_phonon_from_phonolammps(phonolammps) -> Phonopy:
     phonon.produce_force_constants()
 
     return phonon
+
+
+def get_strings_for_phonolammps(cell:tuple,
+                                filepath:str,
+                                pair_style:str,
+                                pair_coeff:str,
+                                ):
+    """
+    Get lammps input for phonolammps from relax lammps input.
+
+    Args:
+        cell: Cell used for phonon calculation.
+        filepath: Dump absolute file path.
+        pair_style: Pair style.
+        pair_coeff: Pair coefficient.
+    """
+    dump_cell(cell=final_cell, filename=filepath, style='lammps')
+    strings = [
+            'units metal',
+            'boundary p p p',
+            'atom_style atomic',
+            'box tilt large',
+            'read_data %s' % filepath,
+            'change_box all triclinic',
+            'neigh_modify every 1 delay 0',
+            'neigh_modify one 5000',
+            'pair_style %s' % pair_style,
+            'pair_coeff %s' % pair_coeff,
+            ]
+
+    return strings

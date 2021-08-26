@@ -5,9 +5,11 @@ This module provides API for lammpkits.
 """
 
 import os
+import numpy as np
 from lammpkits.file_io import dump_cell
 from lammpkits.lammps.static import LammpsStatic
 from lammpkits.lammps.output import LammpsOutput
+from lammpkits.lammps.phonon import LammpsPhonon
 
 class Lammpkits():
     """
@@ -22,6 +24,7 @@ class Lammpkits():
         self._final_cell = None
         self._statics = None
         self._outputs = None
+        self._phonon = None
 
     @property
     def initial_cell(self):
@@ -129,7 +132,25 @@ class Lammpkits():
 
     def run_lammps_phonon(
             self,
+            in_lammps:list,
+            supercell_matrix:np.array=np.eye(3, dtype=int),
+            dump_dir:str='.',
+            is_save:bool=True,
+            filename:str="phonopy_params.yaml",
             ):
         """
         Run lammps phonon.
+
+        Args:
+            in_lammps: Lammps input for phonon.
+            supercell_matrix: Supercell matrix.
+            dump_dir: Dump directory.
+            is_save: If True, save phonon.
+            filename: Save phonon file name.
         """
+        lmpkits_phonon = LammpsPhonon(in_lammps=in_lammps,
+                                      dump_dir=dump_dir)
+        lmpkits_phonon.set_phonolammps(supercell_matrix=supercell_matrix)
+        lmpkits_phonon.run_phonon()
+        if is_save:
+            lmpkits_phonon.save_phonon(filename=filename)
