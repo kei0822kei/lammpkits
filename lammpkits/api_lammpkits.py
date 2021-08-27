@@ -11,6 +11,7 @@ from lammpkits.lammps.static import LammpsStatic
 from lammpkits.lammps.output import LammpsOutput
 from lammpkits.lammps.phonon import LammpsPhonon
 
+
 class Lammpkits():
     """
     API for lammpkits.
@@ -108,7 +109,8 @@ class Lammpkits():
             lmp_stc.add_structure(cell=initial_cell)
             dump_cell(cell=lmp_stc.get_initial_cell(),
                       filename=os.path.join(dump_dir, 'initial_cell.poscar'))
-            lmp_stc.add_potential_from_database(pair_style=pair_style, pot_file=pot_file)
+            lmp_stc.add_potential_from_database(pair_style=pair_style,
+                                                pot_file=pot_file)
             lmp_stc.add_thermo(thermo=dump_steps)
             lmp_stc.add_dump(dump_steps=dump_steps, basedir='cfg')
             if 'box_relax' in lmp_args.keys():
@@ -132,7 +134,9 @@ class Lammpkits():
 
     def run_lammps_phonon(
             self,
-            in_lammps:list,
+            cell:tuple,
+            pair_style:str,
+            pair_coeff:str,
             supercell_matrix:np.array=np.eye(3, dtype=int),
             dump_dir:str='.',
             is_save:bool=True,
@@ -142,13 +146,17 @@ class Lammpkits():
         Run lammps phonon.
 
         Args:
-            in_lammps: Lammps input for phonon.
+            cell: Cell used for phonon calculation.
+            pair_style: Pair style.
+            pair_coeff: Pair coefficient.
             supercell_matrix: Supercell matrix.
             dump_dir: Dump directory.
             is_save: If True, save phonon.
             filename: Save phonon file name.
         """
-        lmpkits_phonon = LammpsPhonon(in_lammps=in_lammps,
+        lmpkits_phonon = LammpsPhonon(cell=cell,
+                                      pair_style=pair_style,
+                                      pair_coeff=pair_coeff,
                                       dump_dir=dump_dir)
         lmpkits_phonon.set_phonolammps(supercell_matrix=supercell_matrix)
         lmpkits_phonon.run_phonon()

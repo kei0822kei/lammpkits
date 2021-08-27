@@ -11,8 +11,7 @@ import numpy as np
 from lammps import lammps
 import lammpkits
 from lammpkits.file_io import dump_cell
-from lammpkits.interfaces.lammps import (get_cell_from_lammps,
-                                         get_lammps_input_for_phonolammps)
+from lammpkits.interfaces.lammps import get_cell_from_lammps
 from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
 
 

@@ -4,8 +4,11 @@
 Toolkits molecular phonon calculation with lammps.
 """
 
+import os
+import numpy as np
 from lammpkits.interfaces.phonolammps import (get_phonolammps,
-                                              get_phonon_from_phonolammps)
+                                              get_phonon_from_phonolammps,
+                                              get_strings_for_phonolammps)
 
 
 class LammpsPhonon():
@@ -14,7 +17,9 @@ class LammpsPhonon():
     """
 
     def __init__(self,
-                 in_lammps:list,
+                 cell:tuple,
+                 pair_style:str,
+                 pair_coeff:str,
                  dump_dir:str='.',
                  raise_dir_exists_error:bool=True,
                  ):
@@ -22,7 +27,9 @@ class LammpsPhonon():
         Init.
 
         Args:
-            in_lammps: Lammps input for phonon.
+            cell: Cell used for phonon calculation.
+            pair_style: Pair style.
+            pair_coeff: Pair coefficient.
             dump_dir: Dump directory.
             raise_dir_exists_error: Raise error if dump_dir exists.
 
@@ -30,9 +37,13 @@ class LammpsPhonon():
             RuntimeError: Dump_dir already exists. This is activated when
                           'raise_dir_exists_error' is True.
         """
+        self._cell = cell
         self._dump_dir = None
         self._set_dump_dir(dump_dir, raise_dir_exists_error)
-        self._lammps_input = in_lammps
+        self._lammps_input = None
+        self._set_lammps_input(cell=cell,
+                               pair_style=pair_style,
+                               pair_coeff=pair_coeff)
         self._phonolammps = None
         self._phonon = None
 
@@ -49,11 +60,25 @@ class LammpsPhonon():
 
         self._dump_dir = dump_dir
 
+    def _set_lammps_input(self, cell, pair_style, pair_coeff):
+        """
+        Set lammps input for phonon calculation.
+        """
+        print(self._dump_dir)
+        filepath = os.path.abspath(os.path.join(self._dump_dir,
+                                                'structure.lammps'))
+        in_lammps = get_strings_for_phonolammps(cell=cell,
+                                                filepath=filepath,
+                                                pair_style=pair_style,
+                                                pair_coeff=pair_coeff)
+
+        self._lammps_input = in_lammps
+
     def set_phonolammps(
             self,
             supercell_matrix:np.array=np.eye(3, dtype=int),
             primitive_matrix:np.array=np.identity(3),
-            show_log:bool=True,
+            show_log:bool=False,
             ):
         """
         Set phonolammps.
@@ -65,7 +90,9 @@ class LammpsPhonon():
         """
         ph_lmp = get_phonolammps(lammps_input=self._lammps_input,
                                  supercell_matrix=supercell_matrix,
-                                 primitive_matrix=primitive_matrix)
+                                 primitive_matrix=primitive_matrix,
+                                 show_log=show_log,
+                                 )
 
         self._phonolammps = ph_lmp
 
@@ -94,4 +121,5 @@ class LammpsPhonon():
         """
         if self._phonon is None:
             raise RuntimeError("Attribute phonon is not set.")
-        self._phonon.save(filename=filename)
+        fpath = os.path.join(self._dump_dir, filename)
+        self._phonon.save(filename=fpath)

@@ -5,6 +5,7 @@ Interfaces for PhononLammps.
 """
 
 import numpy as np
+from phonopy import Phonopy
 from phonolammps import Phonolammps
 from lammpkits.file_io import dump_cell
 
@@ -67,7 +68,8 @@ def get_strings_for_phonolammps(cell:tuple,
         pair_style: Pair style.
         pair_coeff: Pair coefficient.
     """
-    dump_cell(cell=final_cell, filename=filepath, style='lammps')
+    dump_cell(cell=cell, filename=filepath, style='lammps')
+    symbol = cell[2][0]
     strings = [
             'units metal',
             'boundary p p p',
@@ -78,7 +80,7 @@ def get_strings_for_phonolammps(cell:tuple,
             'neigh_modify every 1 delay 0',
             'neigh_modify one 5000',
             'pair_style %s' % pair_style,
-            'pair_coeff %s' % pair_coeff,
+            'pair_coeff * * {} {}'.format(pair_coeff, symbol),
             ]
 
     return strings
