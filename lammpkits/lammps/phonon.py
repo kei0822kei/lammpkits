@@ -64,7 +64,6 @@ class LammpsPhonon():
         """
         Set lammps input for phonon calculation.
         """
-        print(self._dump_dir)
         filepath = os.path.abspath(os.path.join(self._dump_dir,
                                                 'structure.lammps'))
         in_lammps = get_strings_for_phonolammps(cell=cell,
