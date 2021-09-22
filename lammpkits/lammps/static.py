@@ -260,7 +260,7 @@ class LammpsStatic():
         Fix atoms in order to atoms do not move.
         """
         strings = 'fix f2 all setforce 0.0 0.0 0.0'
-        self._lammps_input.append(string)
+        self._lammps_input.append(strings)
 
     def add_minimize(self,
                      etol:float=1e-10,

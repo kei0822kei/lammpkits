@@ -79,6 +79,7 @@ class Lammpkits():
 
             >>> minimize_settings = [
                             {
+                                'fix_atoms': True
                                 'box_relax': {'aniso': 0, 'couple': 'xy'},
                                 'minimize': {'etol': 1e-6,
                                              'ftol': 1e-6,
@@ -113,6 +114,9 @@ class Lammpkits():
                                                 pot_file=pot_file)
             lmp_stc.add_thermo(thermo=dump_steps)
             lmp_stc.add_dump(dump_steps=dump_steps, basedir='cfg')
+            if 'fix_atoms' in lmp_args.keys():
+                if lmp_args['fix_atoms']:
+                    lmp_stc.add_fix_atoms()
             if 'box_relax' in lmp_args.keys():
                 lmp_stc.add_fix_box_relax(keyvals=lmp_args['box_relax'])
             lmp_stc.add_minimize(**lmp_args['minimize'])
