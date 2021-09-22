@@ -255,6 +255,13 @@ class LammpsStatic():
         self._check_run_is_not_finished()
         self._lammps_input.extend('unfix f1')
 
+    def add_fix_atoms(self):
+        """
+        Fix atoms in order to atoms do not move.
+        """
+        strings = 'fix f2 all setforce 0.0 0.0 0.0'
+        self._lammps_input.append(string)
+
     def add_minimize(self,
                      etol:float=1e-10,
                      ftol:float=1e-10,
