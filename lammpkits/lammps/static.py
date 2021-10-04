@@ -262,6 +262,16 @@ class LammpsStatic():
         strings = 'fix f2 all setforce 0.0 0.0 0.0'
         self._lammps_input.append(strings)
 
+    def add_fix_twinboundary(self, twinboundary_indices:list):
+        """
+        Fix atoms of twin boundary in order to atoms do not move along z axis.
+        """
+        strings = []
+        strings.append('group g1 id %s' % ' '.join(
+            map(str, twinboundary_indices)))
+        strings.append('fix f3 g1 setforce NULL NULL 0.0')
+        self._lammps_input.extend(strings)
+
     def add_minimize(self,
                      etol:float=1e-10,
                      ftol:float=1e-10,

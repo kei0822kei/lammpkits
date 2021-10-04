@@ -79,7 +79,7 @@ class Lammpkits():
 
             >>> minimize_settings = [
                             {
-                                'fix_atoms': True
+                                'fix_atoms': True,
                                 'box_relax': {'aniso': 0, 'couple': 'xy'},
                                 'minimize': {'etol': 1e-6,
                                              'ftol': 1e-6,
@@ -87,6 +87,7 @@ class Lammpkits():
                                              'maxeval': 10000}
                             },
                             {
+                                'fix_twinboundary': [0, 1, 34, 35],
                                 'box_relax': {'tri': 0},
                                 'minimize': {'etol': 1e-10,
                                              'ftol': 1e-10,
@@ -117,6 +118,8 @@ class Lammpkits():
             if 'fix_atoms' in lmp_args.keys():
                 if lmp_args['fix_atoms']:
                     lmp_stc.add_fix_atoms()
+            elif 'fix_twinboundary' in lmp_args.keys():
+                lmp_stc.add_fix_twinboundary(lmp_args['fix_twinboundary'])
             if 'box_relax' in lmp_args.keys():
                 lmp_stc.add_fix_box_relax(keyvals=lmp_args['box_relax'])
             lmp_stc.add_minimize(**lmp_args['minimize'])
