@@ -4,30 +4,58 @@
 This module deals with lammps output.
 """
 
+import numpy as np
 from lammpkits.interfaces.pymatgen import get_data_from_log_lammps
 from lammpkits.plot.base import line_chart
+from lammpkits.file_io import read_json
 
 class LammpsOutput():
     """
     This class deals with lammps output.
     """
 
-    def __init__(self, logfile='log.lammps'):
+    def __init__(self, jsonfile:str='lammpkits.json'):
         """
         Initialize.
         """
-        self._logfile = logfile
+        self._lammps_input = None
+        self._initial_cell = None
+        self._final_cell = None
         self._keys = None
         self._data = None
-        self._set_data()
+        self._energy = None
+        self._set_data(jsonfile)
 
-    def _set_data(self):
+    @property
+    def initial_cell(self):
+        return self._initial_cell
+
+    @property
+    def final_cell(self):
+        return self._final_cell
+
+    @property
+    def keys(self):
+        return self._keys
+
+    @property
+    def energy(self):
+        return self._energy
+
+    def _set_data(self, jsonfile):
         """
         Set data of log.lammps.
         """
-        keys, data = get_data_from_log_lammps(self._logfile)
-        self._keys = keys
-        self._data = data
+        dump_data = read_json(jsonfile)
+        self._lammps_input = dump_data['lammps_input']
+        self._keys = dump_data['log_lammps']['keys']
+        self._data = np.array(dump_data['log_lammps']['data'])
+        self._initial_cell = dump_data['initial_cell']
+        self._final_cell = dump_data['initial_cell']
+        for cell in [self._initial_cell, self._final_cell]:
+            cell[0] = np.array(cell[0])
+            cell[1] = np.array(cell[1])
+        self._energy = self.get_data_from_key('PotEng')[-1]
 
     def get_keys(self):
         """

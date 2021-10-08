@@ -4,7 +4,23 @@
 File inputs and outputs.
 """
 
+import json
 import numpy as np
+
+
+def read_json(jsonfile:str) -> dict:
+    """
+    Read dic from json.
+
+    Args:
+        jsonfile: Json file.
+
+    Returns:
+        dict: Dictionary object.
+    """
+    with open(jsonfile) as f:
+        dic = json.load(f)
+    return dic
 
 
 def get_cell_from_lammps_structure(filename:str):

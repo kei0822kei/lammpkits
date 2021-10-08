@@ -16,7 +16,7 @@ def get_argparse():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
-        '-l', '--logfile', type=str, default=None,
+        '-j', '--jsonfile', type=str, default=None,
         help="Output log.lammps file.")
 
     parser.add_argument(
@@ -30,12 +30,12 @@ def get_argparse():
     return parser.parse_args()
 
 
-def main(logfile,
+def main(jsonfile,
          keys,
          is_plot,
          ):
-    lmp_out = LammpsOutput(logfile=logfile)
-    print("Load: %s" % logfile)
+    lmp_out = LammpsOutput(jsonfile=jsonfile)
+    print("Load: %s" % jsonfile)
     print("Available keys are: {}".format(lmp_out.get_keys()))
 
     num_of_plots = len(keys)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     else:
         keys = None
 
-    main(logfile=args.logfile,
+    main(jsonfile=args.jsonfile,
          keys=keys,
          is_plot=args.plot,
          )

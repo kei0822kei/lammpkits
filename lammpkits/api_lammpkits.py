@@ -124,13 +124,13 @@ class Lammpkits():
                 lmp_stc.add_fix_box_relax(keyvals=lmp_args['box_relax'])
             lmp_stc.add_minimize(**lmp_args['minimize'])
             lmp_stc.run_lammps()
-            lmp_stc.dump_lammps(
-                    filename=os.path.join(dump_dir,'lammpkits.json'))
+            jsonfile = os.path.join(dump_dir, 'lammpkits.json')
+            lmp_stc.dump_lammps(filename=jsonfile)
             final_cell = lmp_stc.get_final_cell()
             dump_cell(cell=final_cell,
                       filename=os.path.join(dump_dir, 'final_cell.poscar'))
             logfile = os.path.join(dump_dir, 'log.lammps')
-            lmp_out = LammpsOutput(logfile)
+            lmp_out = LammpsOutput(jsonfile)
             statics.append(lmp_stc)
             outputs.append(lmp_out)
             initial_cell = final_cell

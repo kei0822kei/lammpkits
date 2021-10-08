@@ -270,7 +270,8 @@ class LammpsStatic():
         strings = []
         strings.append('group g1 id %s' % ' '.join(
             map(str, indices)))
-        strings.append('fix f3 g1 setforce NULL NULL 0.0')
+        # strings.append('fix f3 g1 setforce NULL NULL 0.0')
+        strings.append('fix f3 g1 setforce 0.0 0.0 0.0')
         self._lammps_input.extend(strings)
 
     def add_minimize(self,
@@ -278,6 +279,7 @@ class LammpsStatic():
                      ftol:float=1e-10,
                      maxiter:int=100000,
                      maxeval:int=100000,
+                     dmax:float=None,
                      ):
         """
         Add relax settings.
@@ -290,6 +292,8 @@ class LammpsStatic():
         strings = []
         strings.append('reset_timestep 0')
         strings.append('min_style cg')
+        if dmax:
+            strings.append('min_modify dmax %f' % dmax)
         strings.append('minimize {} {} {} {}'.format(
             etol, ftol, maxiter, maxeval))
         self._lammps_input.extend(strings)
