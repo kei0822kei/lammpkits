@@ -209,6 +209,7 @@ class LammpsStatic():
         strings.append('thermo_style custom step pe press '
                        + 'pxx pyy pzz pxy pxz pyz lx ly lz vol fmax fnorm')
         strings.append('thermo_modify norm no')  # Do not normalize
+        strings.append('thermo_modify format float %.12g')
 
         self._lammps_input.extend(strings)
 
