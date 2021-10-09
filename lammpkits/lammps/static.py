@@ -270,8 +270,8 @@ class LammpsStatic():
         strings = []
         strings.append('group g1 id %s' % ' '.join(
             map(str, indices)))
-        # strings.append('fix f3 g1 setforce NULL NULL 0.0')
-        strings.append('fix f3 g1 setforce 0.0 0.0 0.0')
+        strings.append('fix f3 g1 setforce NULL NULL 0.0')
+        # strings.append('fix f3 g1 setforce 0.0 0.0 0.0')
         self._lammps_input.extend(strings)
 
     def add_minimize(self,
