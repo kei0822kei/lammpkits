@@ -47,6 +47,14 @@ class LammpsPhonon():
         self._phonolammps = None
         self._phonon = None
 
+    @property
+    def phonon(self):
+        """
+        Final cell.
+        """
+        return self._phonon
+
+
     def _set_dump_dir(self, dump_dir, raise_dir_exists_error):
         """
         Create directory and set dump dir.

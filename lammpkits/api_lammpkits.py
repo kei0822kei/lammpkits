@@ -25,7 +25,7 @@ class Lammpkits():
         self._final_cell = None
         self._statics = None
         self._outputs = None
-        self._phonon = None
+        self._lammpkits_phonon = None
 
     @property
     def initial_cell(self):
@@ -54,6 +54,13 @@ class Lammpkits():
         List of LammpsOutput class objects.
         """
         return self._outputs
+
+    @property
+    def lammpkits_phonon(self):
+        """
+        List of LammpsOutput class objects.
+        """
+        return self._lammpkits_phonon
 
     def run_static_calc(
             self,
@@ -169,3 +176,4 @@ class Lammpkits():
         lmpkits_phonon.run_phonon()
         if is_save:
             lmpkits_phonon.save_phonon(filename=filename)
+        self._lammpkits_phonon = lmpkits_phonon
