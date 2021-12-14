@@ -1,0 +1,3 @@
+# mlp.lammps => icsd pair-8
+% python mg_phonon.py --posfile POSCAR --pair_style mlip_pair --pair_coeff mlp.lammps --supercell_matrix '4 4 4'
+% phonopy --band 'auto' -p
