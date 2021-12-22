@@ -1,0 +1,25 @@
+{
+    "name": "lammpkits",
+    "author": "kei0822kei",
+    "author_email": "mizokami.keiyu.46u@st.kyoto-u.ac.jp",
+    "description": "Toolkits for lammps.",
+    "url": "https://github.com/kei0822kei/lammpkits",
+    "license": "MIT",
+    "classifiers": [
+        "Programming Language :: Python",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English"
+    ],
+    "version": "1.0.0",
+    "include_package_data": true,
+    "reentry_register": true,
+    "install_requires": [
+        "pymatgen"
+    ],
+    "extras_require": {
+        "develop": [
+            "pytest"
+        ]
+    }
+}
